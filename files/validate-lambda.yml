@@ -1,0 +1,60 @@
+name: Validate Lambda
+
+on:
+  push:
+    paths: ["lambda/**"]
+  pull_request:
+    paths: ["lambda/**"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lambda/veda-brain
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: lambda/veda-brain/package.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Verify required files exist
+        run: |
+          test -f index.mjs   && echo "✅ index.mjs"
+          test -f package.json && echo "✅ package.json"
+
+      - name: Verify ES module config
+        run: |
+          node -e "
+            const p = JSON.parse(require('fs').readFileSync('package.json','utf8'));
+            if (p.type !== 'module') { console.error('❌ Missing type:module'); process.exit(1); }
+            console.log('✅ ES module type set');
+          "
+
+      - name: Verify exports and key functions
+        run: |
+          node -e "
+            const code = require('fs').readFileSync('index.mjs','utf8');
+            const checks = [
+              ['handler export',    code.includes('export const handler')],
+              ['CRIS model prefix', code.includes('us.anthropic')],
+              ['Gemini route',      code.includes('callGemini')],
+              ['Bedrock route',     code.includes('callBedrock')],
+              ['CORS headers',      code.includes('Access-Control-Allow-Origin')],
+              ['Error handler',     code.includes('handleError')],
+              ['JSON parser',       code.includes('safeJsonParse')],
+            ];
+            let ok = true;
+            checks.forEach(([name, pass]) => {
+              console.log((pass ? '✅' : '❌') + ' ' + name);
+              if (!pass) ok = false;
+            });
+            if (!ok) process.exit(1);
+          "
