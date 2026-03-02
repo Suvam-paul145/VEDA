@@ -67,7 +67,7 @@
       "properties": {
         "veda.apiUrl": {
           "type": "string",
-          "default": "https://YOUR_API_ID.execute-api.us-east-1.amazonaws.com/prod/analyze",
+          "default": "https://x0effel94e.execute-api.us-east-1.amazonaws.com/prod",
           "description": "Your VEDA API Gateway endpoint URL"
         },
         "veda.companionMode": {
