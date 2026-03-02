@@ -4,7 +4,7 @@
  * ║           AWS Bharat Hackathon                               ║
  * ╠══════════════════════════════════════════════════════════════╣
  * ║  Routing Strategy:                                           ║
- * ║  companion → GCP Gemini 2.0 Flash  (~400ms, free, 1500 RPM) ║
+ * ║  companion → GCP Gemini 2.5 Pro     (advanced reasoning)     ║
  * ║  analyze   → Claude 3.5 Sonnet CRIS (~1.5s, best quality)   ║
  * ║  diagram   → Claude 3.5 Haiku CRIS  (~600ms, fast + cheap)  ║
  * ║  deep      → Claude 3 Opus CRIS     (~3-5s, max reasoning)  ║
@@ -69,7 +69,7 @@ const MODELS = {
   deep:               process.env.MODEL_DEEP_ID      || "us.anthropic.claude-3-opus-20240229-v1:0",
 };
 
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-2.5-pro";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Keywords that auto-escalate the request to Claude Opus (deep reasoning)
@@ -189,7 +189,7 @@ export const handler = async (event) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GCP Gemini 2.0 Flash  (companion mode — fastest, free)
+// GCP Gemini 2.5 Pro  (companion mode — advanced reasoning)
 // ─────────────────────────────────────────────────────────────────────────────
 async function callGemini(code, language, geminiKey, t0) {
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
