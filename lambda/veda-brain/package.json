@@ -1,20 +1,18 @@
 {
   "name": "veda-brain",
-  "version": "1.0.0",
-  "description": "VEDA Lambda — AI routing engine (AWS Bedrock CRIS + GCP Gemini)",
+  "version": "1.1.0",
+  "description": "VEDA Lambda — AI routing engine (AWS Bedrock CRIS + GCP Gemini via Secrets Manager)",
   "type": "module",
   "main": "index.mjs",
-  "engines": {
-    "node": ">=20.0.0"
-  },
+  "engines": { "node": ">=20.0.0" },
   "scripts": {
-    "test": "node test/run-local.mjs",
+    "test":    "node test/run-local.mjs",
     "package": "npm install --omit=dev && zip -r veda-brain.zip index.mjs package.json node_modules/",
-    "deploy": "npm run package && aws lambda update-function-code --function-name veda-brain --zip-file fileb://veda-brain.zip --region us-east-1"
+    "deploy":  "npm run package && aws lambda update-function-code --function-name veda-brain --zip-file fileb://veda-brain.zip --region us-east-1"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.600.0"
+    "@aws-sdk/client-bedrock-runtime":  "^3.600.0",
+    "@aws-sdk/client-secrets-manager":  "^3.600.0"
   },
-  "keywords": ["veda", "aws", "bedrock", "lambda", "vscode", "debugging"],
   "license": "MIT"
 }
