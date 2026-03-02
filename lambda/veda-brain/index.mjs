@@ -1,98 +1,99 @@
 /**
- * ╔══════════════════════════════════════════════════════════════╗
- * ║           VEDA Brain — Lambda Handler v1.1                   ║
- * ║           AWS Bharat Hackathon                               ║
- * ╠══════════════════════════════════════════════════════════════╣
- * ║  Routing Strategy:                                           ║
- * ║  companion → GCP Gemini 2.5 Pro     (advanced reasoning)     ║
- * ║  analyze   → Claude 3.5 Sonnet CRIS (~1.5s, best quality)   ║
- * ║  diagram   → Claude 3.5 Haiku CRIS  (~600ms, fast + cheap)  ║
- * ║  deep      → Claude 3 Opus CRIS     (~3-5s, max reasoning)  ║
- * ╠══════════════════════════════════════════════════════════════╣
- * ║  Gemini key fetched from AWS Secrets Manager at cold start   ║
- * ║  Cached in module scope — never fetched twice on warm start  ║
- * ╚══════════════════════════════════════════════════════════════╝
+ * ╔══════════════════════════════════════════════════════════════════╗
+ * ║         VEDA Brain — Lambda Handler v3.0                         ║
+ * ║         AWS Bharat Hackathon                                     ║
+ * ╠══════════════════════════════════════════════════════════════════╣
+ * ║  ROUTING:                                                        ║
+ * ║  companion → Gemini 2.5 Flash (free, 250 req/day)                ║
+ * ║  analyze   → OpenRouter → claude-haiku-4-5 (free credits)        ║
+ * ║  diagram   → OpenRouter → claude-haiku-4-5 (free credits)        ║
+ * ║  deep      → OpenRouter → claude-sonnet-4-5 (free credits)       ║
+ * ║  fallback  → OpenRouter → llama-3.3-70b:free (100% free)         ║
+ * ╠══════════════════════════════════════════════════════════════════╣
+ * ║  WHY OPENROUTER:                                                  ║
+ * ║  • No AWS Bedrock marketplace subscription needed                 ║
+ * ║  • OpenAI-compatible API format — simple fetch() call            ║
+ * ║  • 39+ completely free models as fallback                        ║
+ * ║  • Single API key for all models                                  ║
+ * ╠══════════════════════════════════════════════════════════════════╣
+ * ║  SECRETS MANAGER ENV VARS NEEDED:                                 ║
+ * ║  OPENROUTER_SECRET_ARN → {"OPENROUTER_API_KEY":"sk-or-v1-..."}   ║
+ * ║  GEMINI_SECRET_ARN     → {"GEMINI_API_KEY":"AIzaSy..."}          ║
+ * ╚══════════════════════════════════════════════════════════════════╝
  */
-
-import {
-  BedrockRuntimeClient,
-  InvokeModelCommand,
-} from "@aws-sdk/client-bedrock-runtime";
 
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AWS Clients
-// ─────────────────────────────────────────────────────────────────────────────
-const bedrockClient       = new BedrockRuntimeClient({ region: "us-east-1" });
-const secretsManagerClient = new SecretsManagerClient({ region: "us-east-1" });
+// ─── Secrets Manager client ───────────────────────────────────────────────────
+const smClient = new SecretsManagerClient({ region: "us-east-1" });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Gemini key — fetched from Secrets Manager ONCE per cold start, then cached.
-// Lambda env var GEMINI_SECRET_ARN holds the ARN of the secret.
-// ─────────────────────────────────────────────────────────────────────────────
-let _geminiKey = null;   // module-level cache
+// ─── Key cache — loaded once on cold start, reused on every warm start ─────────
+let _openrouterKey = null;
+let _geminiKey     = null;
 
-async function getGeminiKey() {
-  if (_geminiKey) return _geminiKey;   // warm start → return cached
+async function loadKeys() {
+  await Promise.all([
+    loadSecret("OPENROUTER_SECRET_ARN", "OPENROUTER_API_KEY", (v) => { _openrouterKey = v; }, "OpenRouter"),
+    loadSecret("GEMINI_SECRET_ARN",     "GEMINI_API_KEY",     (v) => { _geminiKey = v; },     "Gemini"),
+  ]);
+}
 
-  const secretArn = process.env.GEMINI_SECRET_ARN;
-  if (!secretArn) {
-    console.warn("[VEDA] GEMINI_SECRET_ARN env var not set — companion mode will use Haiku fallback");
-    return null;
-  }
-
+async function loadSecret(envVar, jsonField, setter, label) {
+  if (setter._loaded) return;
+  const arn = process.env[envVar];
+  if (!arn) { console.warn(`[VEDA] ${envVar} not set — ${label} disabled`); return; }
   try {
-    const cmd = new GetSecretValueCommand({ SecretId: secretArn });
-    const res = await secretsManagerClient.send(cmd);
+    const res    = await smClient.send(new GetSecretValueCommand({ SecretId: arn }));
     const parsed = JSON.parse(res.SecretString);
-    _geminiKey = parsed.GEMINI_API_KEY;
-    console.log("[VEDA] Gemini key loaded from Secrets Manager ✅");
-    return _geminiKey;
-  } catch (err) {
-    console.error("[VEDA] Failed to load Gemini key from Secrets Manager:", err.message);
-    return null;
+    const value  = parsed[jsonField];
+    if (!value) {
+      console.error(`[VEDA] Secret loaded but field "${jsonField}" missing. Check your secret JSON.`);
+      return;
+    }
+    setter(value);
+    setter._loaded = true;
+    console.log(`[VEDA] ${label} key loaded ✅`);
+  } catch (e) {
+    console.error(`[VEDA] Failed to load ${label} key:`, e.message);
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Model IDs  (CRIS = "us." prefix → 3× effective Bedrock quota for free)
-// Use 3.5 Sonnet NOT Claude 4.x (4.x has 5× output token burndown penalty)
-// ─────────────────────────────────────────────────────────────────────────────
-const MODELS = {
-  companion_fallback: process.env.MODEL_COMPANION_ID || "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-  analyze:            process.env.MODEL_ANALYZE_ID   || "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-  diagram:            process.env.MODEL_DIAGRAM_ID   || "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-  deep:               process.env.MODEL_DEEP_ID      || "us.anthropic.claude-3-opus-20240229-v1:0",
+// ─── OpenRouter config ────────────────────────────────────────────────────────
+// OpenRouter uses OpenAI-compatible format: POST /v1/chat/completions
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+// Model IDs — prefix "anthropic/" for Claude models via OpenRouter
+// ":free" suffix = completely free, zero credits needed (Llama fallback)
+const OR_MODELS = {
+  fast:     "anthropic/claude-haiku-4-5",          // Haiku — fast, cheap credits
+  best:     "anthropic/claude-sonnet-4-5",         // Sonnet — deep analysis
+  free:     "meta-llama/llama-3.3-70b-instruct:free", // 100% free fallback
 };
 
-const GEMINI_MODEL = "gemini-2.5-pro";
+// ─── Gemini config ────────────────────────────────────────────────────────────
+const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Keywords that auto-escalate the request to Claude Opus (deep reasoning)
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Deep-escalation keywords ─────────────────────────────────────────────────
 const DEEP_TRIGGERS = [
   "production", "race condition", "memory leak", "intermittent",
   "sometimes fails", "flaky", "concurrency", "deadlock",
   "out of memory", "random crash", "only in prod", "heap",
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// System Prompts
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── System Prompts ───────────────────────────────────────────────────────────
 const COMPANION_PROMPT = `You are VEDA, a real-time code watcher inside VSCode.
 Scan the code for issues. Be fast — under 150 tokens total.
-Return ONLY valid JSON. No markdown. No backticks. No text outside JSON.
-First character must be { and last must be }.
+Return ONLY valid JSON. No markdown. No backticks. First char { last char }.
 
 {
   "has_issue": true or false,
-  "severity": "critical" or "high" or "medium" or "low" or "none",
-  "bug_type": "null_reference" or "async_issue" or "syntax_error" or "logic_error" or "type_error" or "security" or "performance" or "none",
-  "hint": "One short sentence for an inline hint. Empty string if no issue.",
+  "severity": "critical" | "high" | "medium" | "low" | "none",
+  "bug_type": "null_reference" | "async_issue" | "syntax_error" | "logic_error" | "type_error" | "security" | "performance" | "none",
+  "hint": "One short sentence. Empty string if no issue.",
   "voice_response": "One spoken sentence. Empty string if no issue."
 }`;
 
@@ -101,49 +102,46 @@ Find bugs, explain them clearly, produce a Mermaid diagram, and suggest a fix.
 
 STRICT OUTPUT RULES:
 1. Output ONLY a valid JSON object — nothing else
-2. First character must be {  |  Last character must be }
+2. First character must be {  Last character must be }
 3. No markdown, no backticks, no prose before or after JSON
-4. For mermaid_diagram: use literal \\n (two chars) for line breaks, NOT actual newlines
+4. mermaid_diagram: use literal \\n for line breaks (two chars, not actual newline)
 
 JSON structure:
 {
   "explanation": "2-3 sentences: what the bug is and its impact on the program",
-  "severity": "critical" or "high" or "medium" or "low" or "none",
-  "bug_type": "null_reference" or "async_issue" or "syntax_error" or "logic_error" or "type_error" or "security" or "performance" or "none",
+  "severity": "critical" | "high" | "medium" | "low" | "none",
+  "bug_type": "null_reference" | "async_issue" | "syntax_error" | "logic_error" | "type_error" | "security" | "performance" | "none",
   "root_cause": "One precise sentence: the mechanical reason this bug occurs",
-  "mermaid_diagram": "flowchart TD\\n A[Start] --> B[Step]\\n B --> C{Decision}\\n C -->|bad path| D[❌ Error]\\n C -->|good path| E[✅ OK]",
-  "fix_code": "Corrected code only — no comments or explanation inside this field",
+  "mermaid_diagram": "flowchart TD\\n A[Start] --> B[Step]\\n B --> C{Decision?}\\n C -->|Bug path| D[❌ Error]\\n C -->|Good path| E[✅ OK]",
+  "fix_code": "Corrected code only — no comments or explanation",
   "fix_explanation": "1-2 sentences: why this fix resolves the root cause",
-  "voice_response": "2 sentences spoken aloud: what the bug is, then what the fix does"
+  "voice_response": "2 spoken sentences: what the bug is, then what the fix does"
 }
 
-If no bug: severity=none, bug_type=none, mermaid shows success flow, fix_code="".`;
+If no bug found: severity=none, bug_type=none, mermaid shows success flow, fix_code="".`;
 
-const DEEP_PROMPT = `You are VEDA performing deep root-cause analysis on a complex or production bug.
-This is for race conditions, memory leaks, intermittent failures, heap issues.
+const DEEP_PROMPT = `You are VEDA performing deep root-cause analysis on a complex bug.
+Race conditions, memory leaks, intermittent failures, heap issues.
 
-STRICT OUTPUT RULES — same as standard:
-Only JSON. First char {. Last char }. No markdown. \\n for newlines in mermaid.
+STRICT: Only JSON. First char {. Last char }. No markdown. \\n for mermaid newlines.
 
 {
   "explanation": "3-5 sentences including runtime behaviour and edge cases",
-  "severity": "critical" or "high" or "medium" or "low",
-  "bug_type": "null_reference" or "async_issue" or "logic_error" or "type_error" or "security" or "performance",
-  "root_cause": "2-3 sentences: precise mechanical reason including timing and state conditions",
-  "mermaid_diagram": "Detailed Mermaid flowchart showing full error propagation with timing/state. Use \\n for newlines.",
+  "severity": "critical" | "high" | "medium" | "low",
+  "bug_type": "null_reference" | "async_issue" | "logic_error" | "type_error" | "security" | "performance",
+  "root_cause": "2-3 sentences: mechanical reason including timing and state conditions",
+  "mermaid_diagram": "Detailed flowchart showing full error propagation. Use \\n for newlines.",
   "fix_code": "Complete corrected code for the affected function or block",
-  "fix_explanation": "3-4 sentences: fix rationale, why it works, trade-offs, edge cases to watch",
-  "voice_response": "3 spoken sentences suitable for a senior developer discussion"
+  "fix_explanation": "3-4 sentences: rationale, trade-offs, edge cases to watch",
+  "voice_response": "3 spoken sentences for a senior developer discussion"
 }`;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main Handler
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Main Handler ─────────────────────────────────────────────────────────────
 export const handler = async (event) => {
-  // CORS preflight
-  if (event.httpMethod === "OPTIONS") {
-    return buildResponse(200, {});
-  }
+  if (event.httpMethod === "OPTIONS") return ok({});
+
+  // Load both API keys on cold start (cached on warm start — no extra latency)
+  await loadKeys();
 
   const t0 = Date.now();
 
@@ -157,47 +155,39 @@ export const handler = async (event) => {
     } = body;
 
     if (!code && !question) {
-      return buildResponse(400, { error: "Provide at least code or a question." });
+      return clientErr("Provide at least 'code' or 'question' in the request body.");
     }
 
-    // Auto-escalate if question contains production-complexity keywords
-    const shouldEscalate = DEEP_TRIGGERS.some((kw) =>
-      question.toLowerCase().includes(kw)
-    );
-    const effectiveMode = shouldEscalate ? "deep" : mode;
+    // Auto-escalate to deep analysis on production complexity keywords
+    const shouldEscalate = DEEP_TRIGGERS.some((kw) => question.toLowerCase().includes(kw));
+    const effectiveMode  = shouldEscalate ? "deep" : mode;
 
     let result;
 
     if (effectiveMode === "companion") {
-      // Try Gemini first (fastest); falls back to Haiku if key unavailable
-      const geminiKey = await getGeminiKey();
-      if (geminiKey) {
-        result = await callGemini(code, language, geminiKey, t0);
-      } else {
-        result = await callBedrock(code, question, language, "companion_fallback", false, t0);
-      }
+      // Companion: try Gemini first (fastest, free), fall back to OpenRouter
+      result = _geminiKey
+        ? await callGemini(code, language, t0)
+        : await callOpenRouter(code, question, language, "analyze", false, t0);
     } else {
-      result = await callBedrock(code, question, language, effectiveMode, shouldEscalate, t0);
+      result = await callOpenRouter(code, question, language, effectiveMode, shouldEscalate, t0);
     }
 
-    return buildResponse(200, result);
+    return ok(result);
 
-  } catch (err) {
-    console.error("[VEDA Error]", err.name, err.message);
-    return handleError(err);
+  } catch (e) {
+    console.error("[VEDA Error]", e.name, e.message);
+    return handleError(e);
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GCP Gemini 2.5 Pro  (companion mode — advanced reasoning)
-// ─────────────────────────────────────────────────────────────────────────────
-async function callGemini(code, language, geminiKey, t0) {
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
-  const userText  = `Language: ${language}\nCode:\n\`\`\`${language}\n${code.slice(0, 3000)}\n\`\`\``;
+// ─── Gemini 2.5 Flash ─────────────────────────────────────────────────────────
+async function callGemini(code, language, t0) {
+  const userText = `Language: ${language}\nCode:\n\`\`\`${language}\n${code.slice(0, 3000)}\n\`\`\``;
 
   let res;
   try {
-    res = await fetch(geminiUrl, {
+    res = await fetch(`${GEMINI_URL}?key=${_geminiKey}`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -205,30 +195,28 @@ async function callGemini(code, language, geminiKey, t0) {
         systemInstruction: { parts: [{ text: COMPANION_PROMPT }] },
         generationConfig:  {
           temperature:      0.05,
-          maxOutputTokens:  250,
+          maxOutputTokens:  300,
           responseMimeType: "application/json",
         },
       }),
     });
-  } catch (networkErr) {
-    console.warn("[VEDA] Gemini network error → falling back to Haiku:", networkErr.message);
-    return callBedrock(code, "Quick bug check", language, "companion_fallback", false, t0);
+  } catch (netErr) {
+    console.warn("[VEDA] Gemini network error → OpenRouter fallback:", netErr.message);
+    return callOpenRouter(code, "Quick bug check", language, "analyze", false, t0);
   }
 
-  // Fixed: was incorrectly referencing `response` (function name) instead of `res`
   if (!res.ok) {
-    console.warn("[VEDA] Gemini HTTP", res.status, "→ falling back to Haiku");
-    return callBedrock(code, "Quick bug check", language, "companion_fallback", false, t0);
+    console.warn("[VEDA] Gemini HTTP", res.status, "→ OpenRouter fallback");
+    return callOpenRouter(code, "Quick bug check", language, "analyze", false, t0);
   }
 
   const data    = await res.json();
   const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-  const parsed  = safeJsonParse(rawText);
 
   return {
-    ...parsed,
+    ...safeJsonParse(rawText),
     _meta: {
-      provider:   "GCP",
+      provider:   "Google",
       model:      GEMINI_MODEL,
       mode:       "companion",
       latency_ms: Date.now() - t0,
@@ -236,53 +224,89 @@ async function callGemini(code, language, geminiKey, t0) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AWS Bedrock — Claude via CRIS
-// ─────────────────────────────────────────────────────────────────────────────
-async function callBedrock(code, question, language, mode, escalated, t0) {
-  const modelId = MODELS[mode] ?? MODELS.analyze;
+// ─── OpenRouter (OpenAI-compatible format) ────────────────────────────────────
+// OpenRouter accepts: POST /v1/chat/completions
+// Headers: Authorization: Bearer sk-or-v1-...
+// Body: { model, messages: [{role, content}], max_tokens, temperature }
+// Response: choices[0].message.content  ← same as OpenAI
+async function callOpenRouter(code, question, language, mode, escalated, t0) {
+  if (!_openrouterKey) {
+    console.error("[VEDA] OpenRouter key not loaded");
+    return noKeyResponse("OpenRouter");
+  }
 
-  // CRITICAL: Bedrock deducts max_tokens UPFRONT from quota.
-  // Set to realistic output size — not theoretical maximum.
-  const maxTokens = {
-    companion_fallback: 200,
-    diagram:            400,
-    analyze:            800,
-    deep:              1500,
-  }[mode] ?? 800;
-
-  const systemPrompt =
-    mode === "deep"               ? DEEP_PROMPT      :
-    mode === "companion_fallback" ? COMPANION_PROMPT  :
-                                    ANALYSIS_PROMPT;
+  // Choose model: Sonnet for deep, Haiku for everything else
+  const model     = mode === "deep" ? OR_MODELS.best : OR_MODELS.fast;
+  const maxTokens = { analyze: 700, diagram: 300, deep: 1200 }[mode] ?? 700;
+  const system    = mode === "deep" ? DEEP_PROMPT : ANALYSIS_PROMPT;
 
   const userContent = code
-    ? `Language: ${language}\nCode:\n\`\`\`${language}\n${code.slice(0, 8000)}\n\`\`\`\n\nDeveloper question: ${question}`
-    : `Developer question: ${question}`;
+    ? `Language: ${language}\nCode:\n\`\`\`${language}\n${code.slice(0, 6000)}\n\`\`\`\n\nQuestion: ${question}`
+    : `Question: ${question}`;
 
-  const cmd = new InvokeModelCommand({
-    modelId,
-    contentType: "application/json",
-    accept:      "application/json",
+  // Try primary model, fall back to free Llama if rate-limited or credits empty
+  for (const attemptModel of [model, OR_MODELS.free]) {
+    try {
+      const result = await fetchOpenRouter(attemptModel, system, userContent, maxTokens, mode, escalated, t0);
+      return result;
+    } catch (e) {
+      if (
+        e.name === "ThrottlingException" ||
+        e.name === "InsufficientCredits" ||
+        (e.status >= 429 && attemptModel !== OR_MODELS.free)
+      ) {
+        console.warn(`[VEDA] ${attemptModel} throttled/out of credits → trying free Llama fallback`);
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  return serverErr("All OpenRouter models unavailable. Retry in a few minutes.");
+}
+
+async function fetchOpenRouter(model, system, userContent, maxTokens, mode, escalated, t0) {
+  const res = await fetch(OPENROUTER_URL, {
+    method:  "POST",
+    headers: {
+      "Content-Type":  "application/json",
+      "Authorization": `Bearer ${_openrouterKey}`,
+      "HTTP-Referer":  "https://github.com/Suvam-paul145/VEDA",  // Required by OpenRouter
+      "X-Title":       "VEDA Debugging Assistant",                 // Shows in OpenRouter dashboard
+    },
     body: JSON.stringify({
-      anthropic_version: "bedrock-2023-05-31",
-      max_tokens:        maxTokens,
-      temperature:       0.05,
-      system:            systemPrompt,
-      messages:          [{ role: "user", content: userContent }],
+      model,
+      max_tokens:  maxTokens,
+      temperature: 0.05,
+      messages: [
+        { role: "system", content: system },
+        { role: "user",   content: userContent },
+      ],
     }),
   });
 
-  const raw     = await bedrockClient.send(cmd);
-  const resBody = JSON.parse(new TextDecoder().decode(raw.body));
-  const rawText = resBody?.content?.[0]?.text ?? "{}";
-  const parsed  = safeJsonParse(rawText);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const errMsg  = errBody?.error?.message ?? "OpenRouter API error";
+    console.error(`[VEDA] OpenRouter ${res.status}:`, errMsg);
+
+    const e    = new Error(errMsg);
+    e.status   = res.status;
+    e.name     = res.status === 429 ? "ThrottlingException"   :
+                 res.status === 402 ? "InsufficientCredits"    :
+                 res.status === 401 ? "AccessDeniedException"  :
+                                      "OpenRouterAPIError";
+    throw e;
+  }
+
+  const data    = await res.json();
+  const rawText = data?.choices?.[0]?.message?.content ?? "{}";
 
   return {
-    ...parsed,
+    ...safeJsonParse(rawText),
     _meta: {
-      provider:   "AWS",
-      model:      modelId,
+      provider:   "OpenRouter",
+      model,
       mode,
       escalated:  !!escalated,
       latency_ms: Date.now() - t0,
@@ -290,31 +314,40 @@ async function callBedrock(code, question, language, mode, escalated, t0) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Safe JSON Parser
-// Handles cases where Claude/Gemini wraps output in markdown despite instructions
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function noKeyResponse(provider) {
+  return {
+    explanation:     `${provider} API key not loaded. Check Secrets Manager ARN in Lambda env vars.`,
+    severity:        "none",
+    bug_type:        "none",
+    root_cause:      "",
+    mermaid_diagram: `flowchart TD\n A[VEDA] --> B[⚠️ No ${provider} Key]`,
+    fix_code:        "",
+    fix_explanation: "",
+    voice_response:  `${provider} API key is not configured.`,
+    _meta:           { provider: "none", error: "missing_key" },
+  };
+}
+
+// ─── Safe JSON Parser ─────────────────────────────────────────────────────────
 function safeJsonParse(text) {
   if (!text) return {};
 
-  // Attempt 1 — direct parse
-  try { return JSON.parse(text); } catch (_) { /* continue */ }
+  // Attempt 1: direct parse
+  try { return JSON.parse(text); } catch (_) {}
 
-  // Attempt 2 — strip markdown code fences
+  // Attempt 2: strip markdown fences
   const stripped = text
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  try { return JSON.parse(stripped); } catch (_) { /* continue */ }
+    .replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+  try { return JSON.parse(stripped); } catch (_) {}
 
-  // Attempt 3 — extract first { … } block
+  // Attempt 3: extract first {...} block
   const match = stripped.match(/\{[\s\S]*\}/);
-  if (match) { try { return JSON.parse(match[0]); } catch (_) { /* continue */ } }
+  if (match) { try { return JSON.parse(match[0]); } catch (_) {} }
 
   console.error("[VEDA] Cannot parse model output:", text.slice(0, 200));
   return {
-    explanation:     "Analysis complete but response could not be parsed. Please try again.",
+    explanation:     "Analysis complete but response format unexpected. Please try again.",
     severity:        "none",
     bug_type:        "none",
     root_cause:      "",
@@ -325,34 +358,25 @@ function safeJsonParse(text) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Response Builder — CORS headers on every response
-// ─────────────────────────────────────────────────────────────────────────────
-function buildResponse(statusCode, body) {
-  return {
-    statusCode,
-    headers: {
-      "Content-Type":                 "application/json",
-      "Access-Control-Allow-Origin":  "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, X-Api-Key, Authorization",
-    },
-    body: JSON.stringify(body),
-  };
-}
+// ─── Response Builders ────────────────────────────────────────────────────────
+const CORS_HEADERS = {
+  "Content-Type":                 "application/json",
+  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, X-Api-Key, Authorization",
+};
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Error Handler — maps AWS SDK error names → useful HTTP responses
-// ─────────────────────────────────────────────────────────────────────────────
-function handleError(err) {
+const ok        = (body) => ({ statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(body) });
+const clientErr = (msg)  => ({ statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: msg }) });
+const serverErr = (msg)  => ({ statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: msg }) });
+
+function handleError(e) {
   const map = {
-    AccessDeniedException:       [403, "IAM role missing required permission. Check AmazonBedrockFullAccess and SecretsManager policy."],
-    ThrottlingException:         [429, "Bedrock rate limit hit. Wait 10 s and retry."],
-    ValidationException:         [400, `Model ID invalid or not enabled in Bedrock Model Access. Detail: ${err.message}`],
-    ResourceNotFoundException:   [404, "Model or secret not found. Check Bedrock Model Access and Secrets Manager."],
-    ModelNotReadyException:      [503, "Model loading. Retry in 30 s."],
-    ServiceUnavailableException: [503, "Bedrock temporarily unavailable. Retry in 60 s."],
+    AccessDeniedException: [401, "OpenRouter API key invalid. Check your key in Secrets Manager."],
+    InsufficientCredits:   [402, "OpenRouter credits exhausted. Free Llama fallback also failed."],
+    ThrottlingException:   [429, "Rate limit hit. Wait 60 seconds and retry."],
+    OpenRouterAPIError:    [502, `OpenRouter error: ${e.message}`],
   };
-  const [status, message] = map[err.name] ?? [500, `Unexpected error: ${err.message}`];
-  return buildResponse(status, { error: message, aws_error_type: err.name });
+  const [code, msg] = map[e.name] ?? [500, `Unexpected error: ${e.message}`];
+  return { statusCode: code, headers: CORS_HEADERS, body: JSON.stringify({ error: msg, type: e.name }) };
 }
