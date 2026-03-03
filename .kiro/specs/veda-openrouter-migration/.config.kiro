@@ -1,0 +1,5 @@
+{
+  "name": "Veda OpenRouter Migration",
+  "version": "1.0.0",
+  "description": "Migration from AWS-based architecture to OpenRouter-based stack for 4-day hackathon implementation"
+}
