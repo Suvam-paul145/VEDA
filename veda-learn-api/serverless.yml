@@ -1,0 +1,99 @@
+service: veda-learn-api
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  # Replace with your IAM role ARN after creating it
+  role: arn:aws:iam::YOUR_ACCOUNT_ID:role/veda-lambda-role
+  environment:
+    OPENROUTER_API_KEY: ${env:OPENROUTER_API_KEY}
+    GITHUB_CLIENT_ID: ${env:GITHUB_CLIENT_ID}
+    GITHUB_CLIENT_SECRET: ${env:GITHUB_CLIENT_SECRET}
+    JWT_SECRET: ${env:JWT_SECRET}
+    OPENSEARCH_ENDPOINT: ${env:OPENSEARCH_ENDPOINT}
+    S3_AUDIO_BUCKET: ${env:S3_AUDIO_BUCKET}
+    S3_CONCEPTS_BUCKET: ${env:S3_CONCEPTS_BUCKET}
+    WS_API_ENDPOINT: ${env:WS_API_ENDPOINT}
+
+functions:
+  # REST API endpoints
+  authCallback:
+    handler: handlers/auth.callback
+    timeout: 30
+    events:
+      - http:
+          path: auth/github/callback
+          method: get
+          cors: true
+
+  analyze:
+    handler: handlers/analyze.handler
+    timeout: 30
+    events:
+      - http:
+          path: api/analyze
+          method: post
+          cors: true
+
+  lesson:
+    handler: handlers/lesson.handler
+    timeout: 60
+    events:
+      - http:
+          path: api/lesson
+          method: post
+          cors: true
+
+  lessonDeep:
+    handler: handlers/lesson.deepHandler
+    timeout: 60
+    events:
+      - http:
+          path: api/lesson/deep
+          method: post
+          cors: true
+
+  quiz:
+    handler: handlers/quiz.handler
+    timeout: 15
+    events:
+      - http:
+          path: api/quiz
+          method: post
+          cors: true
+
+  progressGet:
+    handler: handlers/progress.get
+    timeout: 10
+    events:
+      - http:
+          path: api/progress/{userId}
+          method: get
+          cors: true
+
+  progressUpdate:
+    handler: handlers/progressUpdate.handler
+    timeout: 10
+    events:
+      - http:
+          path: api/progress/update
+          method: post
+          cors: true
+
+  # WebSocket endpoints
+  wsConnect:
+    handler: handlers/wsConnect.handler
+    events:
+      - websocket:
+          route: $connect
+
+  wsDisconnect:
+    handler: handlers/wsDisconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
+
+plugins:
+  - serverless-offline

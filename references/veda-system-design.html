@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veda Learn — System Design</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-size: 13px
+    }
+
+    nav {
+      width: 230px;
+      background: #161b22;
+      border-right: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0
+    }
+
+    .nav-header {
+      padding: 20px;
+      border-bottom: 1px solid #30363d
+    }
+
+    .nav-logo {
+      font-size: 17px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.3px
+    }
+
+    .nav-sub {
+      font-size: 11px;
+      color: #6e7681;
+      margin-top: 3px
+    }
+
+    .nav-section {
+      padding: 12px 20px 4px;
+      font-size: 10px;
+      color: #6e7681;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700
+    }
+
+    .nav-item {
+      padding: 9px 20px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      color: #8b949e;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-right: 3px solid transparent
+    }
+
+    .nav-item:hover {
+      color: #e6edf3;
+      background: #21262d
+    }
+
+    .nav-item.active {
+      color: #a78bfa;
+      border-left-color: #7c3aed;
+      background: #1c1f26
+    }
+
+    .nav-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #30363d;
+      flex-shrink: 0;
+      transition: background 0.15s
+    }
+
+    .nav-item.active .nav-dot {
+      background: #7c3aed
+    }
+
+    .nav-item:hover .nav-dot {
+      background: #8b949e
+    }
+
+    .nav-number {
+      font-size: 10px;
+      font-weight: 700;
+      color: #6e7681;
+      min-width: 16px
+    }
+
+    .nav-item.active .nav-number {
+      color: #a78bfa
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0
+    }
+
+    .top-bar {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 18px 28px;
+      flex-shrink: 0
+    }
+
+    .top-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e6edf3;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .top-badge {
+      font-size: 10px;
+      background: #7c3aed22;
+      border: 1px solid #7c3aed55;
+      color: #a78bfa;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-weight: 600
+    }
+
+    .top-desc {
+      font-size: 12px;
+      color: #6e7681;
+      margin-top: 6px;
+      line-height: 1.6
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px
+    }
+
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeIn 0.2s ease
+    }
+
+    .tab-pane.active {
+      display: flex
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px
+    }
+
+    .card-icon {
+      font-size: 22px;
+      margin-bottom: 8px
+    }
+
+    .card-label {
+      font-size: 10px;
+      color: #6e7681;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      font-weight: 600
+    }
+
+    .card-value {
+      font-size: 13px;
+      color: #e6edf3;
+      font-weight: 600;
+      line-height: 1.4
+    }
+
+    .card-sub {
+      font-size: 11px;
+      color: #6e7681;
+      margin-top: 3px
+    }
+
+    .diagram-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden
+    }
+
+    .diagram-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .diagram-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .diagram-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #a78bfa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px
+    }
+
+    .diagram-desc {
+      font-size: 11px;
+      color: #6e7681
+    }
+
+    .diagram-body {
+      padding: 20px;
+      overflow-x: auto;
+      min-height: 200px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start
+    }
+
+    .diagram-body svg {
+      max-width: 100%;
+      height: auto
+    }
+
+    .loading {
+      color: #6e7681;
+      font-size: 12px;
+      padding: 40px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .loading-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #7c3aed;
+      animation: pulse 1.2s infinite
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: 0.2s
+    }
+
+    .loading-dot:nth-child(3) {
+      animation-delay: 0.4s
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.3
+      }
+
+      50% {
+        opacity: 1
+      }
+    }
+
+    .prose-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px
+    }
+
+    .prose-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e6edf3;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .prose-body {
+      font-size: 12px;
+      color: #8b949e;
+      line-height: 1.75
+    }
+
+    .prose-body strong {
+      color: #e6edf3
+    }
+
+    .prose-body code {
+      background: #21262d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 11px;
+      color: #a78bfa
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px
+    }
+
+    @media(max-width:900px) {
+      .two-col {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .step-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px
+    }
+
+    .step-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start
+    }
+
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px
+    }
+
+    .step-body {
+      flex: 1
+    }
+
+    .step-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #e6edf3;
+      margin-bottom: 3px
+    }
+
+    .step-desc {
+      font-size: 11px;
+      color: #8b949e;
+      line-height: 1.6
+    }
+
+    .table-box {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden
+    }
+
+    .table-head {
+      padding: 12px 16px;
+      background: #21262d;
+      border-bottom: 1px solid #30363d
+    }
+
+    .table-head-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #e6edf3
+    }
+
+    .table-head-sub {
+      font-size: 10px;
+      color: #6e7681;
+      margin-top: 2px
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    th {
+      padding: 8px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      color: #6e7681;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: #1c2028;
+      border-bottom: 1px solid #30363d
+    }
+
+    td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #21262d;
+      font-size: 12px;
+      color: #e6edf3
+    }
+
+    tr:last-child td {
+      border-bottom: none
+    }
+
+    tr:hover td {
+      background: #21262d55
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700
+    }
+
+    .b-pk {
+      background: #7c3aed22;
+      color: #a78bfa;
+      border: 1px solid #7c3aed44
+    }
+
+    .b-sk {
+      background: #0369a122;
+      color: #38bdf8;
+      border: 1px solid #0369a144
+    }
+
+    .b-gsi {
+      background: #d9770622;
+      color: #fb923c;
+      border: 1px solid #d9770644
+    }
+
+    .b-ttl {
+      background: #dc262622;
+      color: #f87171;
+      border: 1px solid #dc262644
+    }
+
+    .b-idx {
+      background: #16a34a22;
+      color: #4ade80;
+      border: 1px solid #16a34a44
+    }
+
+    .flow-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px
+    }
+
+    .flow-tag {
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid
+    }
+
+    .ft-aws {
+      background: #d9770611;
+      color: #fb923c;
+      border-color: #d9770633
+    }
+
+    .ft-ext {
+      background: #0369a111;
+      color: #38bdf8;
+      border-color: #0369a133
+    }
+
+    .ft-ai {
+      background: #7c3aed11;
+      color: #a78bfa;
+      border-color: #7c3aed33
+    }
+
+    .ft-user {
+      background: #16a34a11;
+      color: #4ade80;
+      border-color: #16a34a33
+    }
+
+    .divider {
+      height: 1px;
+      background: #30363d;
+      margin: 4px 0
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0d1117
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 3px
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div class="nav-header">
+      <div class="nav-logo">⬡ Veda Learn</div>
+      <div class="nav-sub">System Design Roadmap</div>
+    </div>
+    <div class="nav-section">Design Sections</div>
+    <div class="nav-item active" data-tab="overview" onclick="showTab('overview')">
+      <span class="nav-dot"></span><span class="nav-number">01</span>System Overview
+    </div>
+    <div class="nav-item" data-tab="architecture" onclick="showTab('architecture')">
+      <span class="nav-dot"></span><span class="nav-number">02</span>Architecture Design
+    </div>
+    <div class="nav-item" data-tab="database" onclick="showTab('database')">
+      <span class="nav-dot"></span><span class="nav-number">03</span>Database Design
+    </div>
+    <div class="nav-item" data-tab="auth" onclick="showTab('auth')">
+      <span class="nav-dot"></span><span class="nav-number">04</span>Authentication Design
+    </div>
+    <div class="nav-item" data-tab="workflow" onclick="showTab('workflow')">
+      <span class="nav-dot"></span><span class="nav-number">05</span>System Workflow
+    </div>
+    <div style="flex:1"></div>
+    <div style="padding:16px 20px;border-top:1px solid #30363d">
+      <div style="font-size:10px;color:#6e7681">Stack</div>
+      <div style="font-size:11px;color:#8b949e;margin-top:6px;line-height:1.8">
+        OpenRouter API<br>AWS Lambda · DynamoDB<br>API Gateway REST + WS<br>OpenSearch Serverless<br>Amazon Polly · S3
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="top-bar" id="top-bar">
+      <div class="top-title">System Overview <span class="top-badge">PROTOTYPE PLAN</span></div>
+      <div class="top-desc" id="top-desc">High-level view of what Veda Learn is, what it does, and the services that
+        power it.</div>
+    </div>
+
+    <div class="content">
+
+      <!-- TAB 1: OVERVIEW -->
+      <div class="tab-pane active" id="tab-overview">
+        <div class="cards-row">
+          <div class="card">
+            <div class="card-icon">🧠</div>
+            <div class="card-label">Product Type</div>
+            <div class="card-value">VS Code Extension</div>
+            <div class="card-sub">Passive AI mentor</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">⚡</div>
+            <div class="card-label">Backend</div>
+            <div class="card-value">AWS Lambda</div>
+            <div class="card-sub">8 serverless functions</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🤖</div>
+            <div class="card-label">AI Engine</div>
+            <div class="card-value">OpenRouter API</div>
+            <div class="card-sub">Haiku · Sonnet · Opus · Gemini</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🗄️</div>
+            <div class="card-label">Database</div>
+            <div class="card-value">DynamoDB</div>
+            <div class="card-sub">6 tables, PAY_PER_REQUEST</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔊</div>
+            <div class="card-label">Voice TTS</div>
+            <div class="card-value">Amazon Polly</div>
+            <div class="card-sub">Generative · Ruth voice</div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔍</div>
+            <div class="card-label">Vector Search</div>
+            <div class="card-value">OpenSearch Serverless</div>
+            <div class="card-sub">kNN · 1536-dim embeddings</div>
+          </div>
+        </div>
+
+        <div class="diagram-box">
+          <div class="diagram-header">
+            <div class="diagram-header-left">
+              <div class="diagram-label">Architecture Overview</div>
+              <div class="diagram-desc">— All services and their connections</div>
+            </div>
+          </div>
+          <div class="diagram-body" id="diagram-overview">
+            <div class="loading">
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div><span style="margin-left:4px">Rendering diagram...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="prose-box">
+            <div class="prose-title">💡 What Veda Learn Does</div>
+            <div class="prose-body">
+              Veda Learn is a <strong>passive AI mentor</strong> living inside VS Code. It watches your code silently
+              via <code>onDidChangeTextDocument</code>. When you write a bug pattern, anti-pattern, security flaw, or
+              performance smell, it <strong>teaches you why</strong> — not just fixes it.<br><br>
+              Every lesson is delivered in <strong>three simultaneous channels</strong>: a natural Polly voice
+              explanation, a Mermaid.js diagram, and a before/after code diff. A quiz fires 30 seconds after you
+              acknowledge the lesson to confirm retention.
+            </div>
+          </div>
+          <div class="prose-box">
+            <div class="prose-title">🎯 The 5 Detection Categories</div>
+            <div class="prose-body">
+              <strong>Anti-Patterns</strong> — N+1 queries, God objects, mutable defaults<br><br>
+              <strong>Bug Patterns</strong> — Null refs, unhandled promises, memory leaks<br><br>
+              <strong>Security</strong> — SQL injection, hardcoded secrets, XSS vectors<br><br>
+              <strong>Performance</strong> — O(n²) loops, blocking I/O, missing useMemo<br><br>
+              <strong>Style/Convention</strong> — DRY violations, SOLID breaks, naming issues
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: ARCHITECTURE -->
+      <div class="tab-pane" id="tab-architecture">
+        <div class="diagram-box">
+          <div class="diagram-header">
+            <div class="diagram-header-left">
+              <div class="diagram-label">Detailed Component Architecture</div>
+              <div class="diagram-desc">— Lambda routing, data flows, and service boundaries</div>
+            </div>
+          </div>
+          <div class="diagram-body" id="diagram-architecture">
+            <div class="loading">
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div><span style="margin-left:4px">Rendering diagram...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="prose-box">
+            <div class="prose-title">⚡ Lambda Function Suite</div>
+            <ul class="step-list">
+              <li class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                  <div class="step-title">auth.js</div>
+                  <div class="step-desc">Handles GitHub OAuth token exchange, upserts user into DynamoDB, issues signed
+                    JWT. Entry point for all identity.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                  <div class="step-title">analyze.js</div>
+                  <div class="step-desc">Receives code snapshot from extension, checks DynamoDB rate lock, calls Haiku
+                    4.5 to classify, saves mistake, triggers lesson async.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                  <div class="step-title">lesson.js</div>
+                  <div class="step-desc">Runs 3 OpenRouter calls in parallel. Queries OpenSearch for RAG context. Calls
+                    Polly, uploads MP3 to S3, pushes lesson via WebSocket.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                  <div class="step-title">quiz.js</div>
+                  <div class="step-desc">Calls Haiku 4.5 to generate 2 MCQ questions as JSON for the concept that was
+                    just taught.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">5</div>
+                <div class="step-body">
+                  <div class="step-title">progressUpdate.js</div>
+                  <div class="step-desc">Calculates streak days, increments skill score, updates learning profile per
+                    language in DynamoDB.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">6</div>
+                <div class="step-body">
+                  <div class="step-title">wsConnect / wsDisconnect.js</div>
+                  <div class="step-desc">Store and remove connectionId in DynamoDB so lesson.js knows where to push the
+                    WebSocket message.</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="prose-box">
+            <div class="prose-title">☁️ API Gateway: Two APIs</div>
+            <div class="prose-body" style="margin-bottom:14px">
+              <strong>REST API</strong> — handles all synchronous operations. The extension calls it with a Bearer JWT
+              for auth, analysis, quiz, and progress. Uses standard HTTP request/response.
+            </div>
+            <div class="prose-body" style="margin-bottom:14px">
+              <strong>WebSocket API</strong> — persistent bidirectional connection opened when the extension starts.
+              lesson.js uses <code>ApiGatewayManagementApi.postToConnection()</code> to push lesson JSON to the correct
+              VS Code client in real-time, without polling.
+            </div>
+            <div class="flow-tags">
+              <span class="flow-tag ft-ext">VS Code Extension</span>
+              <span class="flow-tag ft-aws">Lambda + API Gateway</span>
+              <span class="flow-tag ft-ai">OpenRouter AI</span>
+              <span class="flow-tag ft-aws">DynamoDB + S3 + Polly</span>
+              <span class="flow-tag ft-ai">OpenSearch Serverless</span>
+            </div>
+            <div class="divider" style="margin:14px 0"></div>
+            <div class="prose-body">
+              <strong>Real-time Push Flow:</strong><br>
+              lesson.js → <code>ApiGatewayManagementApi</code> → WebSocket API → Extension WebSocket client →
+              <code>postMessage</code> → Webview renders lesson panels + plays Polly audio
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: DATABASE -->
+      <div class="tab-pane" id="tab-database">
+        <div class="diagram-box">
+          <div class="diagram-header">
+            <div class="diagram-header-left">
+              <div class="diagram-label">Database Schema</div>
+              <div class="diagram-desc">— DynamoDB tables + OpenSearch index + relationships</div>
+            </div>
+          </div>
+          <div class="diagram-body" id="diagram-database" style="overflow-x:auto;justify-content:flex-start">
+            <div class="loading">
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div><span style="margin-left:4px">Rendering diagram...</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="table-box">
+            <div class="table-head">
+              <div class="table-head-title">veda-users</div>
+              <div class="table-head-sub">Core user identity and gamification state</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Attribute</th>
+                  <th>Type</th>
+                  <th>Key</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>userId</td>
+                  <td>String</td>
+                  <td><span class="badge b-pk">PK</span></td>
+                  <td>gh_{githubId} — deterministic, stable</td>
+                </tr>
+                <tr>
+                  <td>githubId</td>
+                  <td>String</td>
+                  <td></td>
+                  <td>Raw numeric GitHub user ID</td>
+                </tr>
+                <tr>
+                  <td>username</td>
+                  <td>String</td>
+                  <td></td>
+                  <td>GitHub login handle</td>
+                </tr>
+                <tr>
+                  <td>avatarUrl</td>
+                  <td>String</td>
+                  <td></td>
+                  <td>GitHub avatar URL for sidebar UI</td>
+                </tr>
+                <tr>
+                  <td>skillScore</td>
+                  <td>Number</td>
+                  <td></td>
+                  <td>0–100 cumulative skill rating</td>
+                </tr>
+                <tr>
+                  <td>streakDays</td>
+                  <td>Number</td>
+                  <td></td>
+                  <td>Consecutive active days</td>
+                </tr>
+                <tr>
+                  <td>lastActive</td>
+                  <td>String</td>
+                  <td></td>
+                  <td>ISO date for streak calculation</td>
+                </tr>
+                <tr>
+                  <td>createdAt</td>
+                  <td>String</td>
+                  <td></td>
+                  <td>ISO timestamp</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="two-col">
+            <div class="table-box">
+              <div class="table-head">
+                <div class="table-head-title">veda-mistakes</div>
+                <div class="table-head-sub">Every detected code problem</div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Attribute</th>
+                    <th>Key</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>mistakeId (UUID)</td>
+                    <td><span class="badge b-pk">PK</span></td>
+                  </tr>
+                  <tr>
+                    <td>userId</td>
+                    <td><span class="badge b-gsi">GSI</span></td>
+                  </tr>
+                  <tr>
+                    <td>language</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>mistakeType</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>conceptId</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>severity (low/med/high)</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>problematicCode</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>confidence (0.0–1.0)</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>lineNumber</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>createdAt</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-box">
+              <div class="table-head">
+                <div class="table-head-title">veda-lessons</div>
+                <div class="table-head-sub">Generated lessons with audio refs</div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Attribute</th>
+                    <th>Key</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>lessonId (UUID)</td>
+                    <td><span class="badge b-pk">PK</span></td>
+                  </tr>
+                  <tr>
+                    <td>userId</td>
+                    <td><span class="badge b-gsi">GSI</span></td>
+                  </tr>
+                  <tr>
+                    <td>mistakeId (FK)</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>conceptId</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>explanation (voice text)</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>codeBefore</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>codeAfter</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>diagramSyntax (Mermaid)</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>audioS3Key</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>status (pending/done/skip)</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>feedbackRating (1–5)</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>createdAt</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="table-box">
+              <div class="table-head">
+                <div class="table-head-title">veda-profiles</div>
+                <div class="table-head-sub">Per-language learning state</div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Attribute</th>
+                    <th>Key</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>userId</td>
+                    <td><span class="badge b-pk">PK</span></td>
+                  </tr>
+                  <tr>
+                    <td>language (python, js…)</td>
+                    <td><span class="badge b-sk">SK</span></td>
+                  </tr>
+                  <tr>
+                    <td>lessonsCompleted</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>overallScore</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>weakAreas (List)</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>updatedAt</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-box">
+              <div class="table-head">
+                <div class="table-head-title">veda-ws-connections + veda-rate-limits</div>
+                <div class="table-head-sub">Infra tables</div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Table</th>
+                    <th>Key Attributes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>veda-ws-connections</strong></td>
+                    <td>userId <span class="badge b-pk">PK</span>, connectionId, connectedAt</td>
+                  </tr>
+                  <tr>
+                    <td><strong>veda-rate-limits</strong></td>
+                    <td>lockKey <span class="badge b-pk">PK</span>, count, userId, ttl <span
+                        class="badge b-ttl">TTL</span></td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="color:#6e7681;font-size:11px;padding-top:10px">lockKey pattern:
+                      <code>lesson-lock:{userId}</code> for 30s lesson cooldown<br>and
+                      <code>rate:{userId}:{minute}</code> for 20 req/min limit</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="table-box">
+            <div class="table-head">
+              <div class="table-head-title">OpenSearch Serverless — concept-embeddings index</div>
+              <div class="table-head-sub">Vector store for RAG — NOT DynamoDB. Separate service.</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>conceptId</td>
+                  <td>keyword</td>
+                  <td>e.g. mutable-default, callback-hell, sql-injection</td>
+                </tr>
+                <tr>
+                  <td>content</td>
+                  <td>text</td>
+                  <td>Full explanation doc for RAG context injection</td>
+                </tr>
+                <tr>
+                  <td>embedding</td>
+                  <td>knn_vector (1536d)</td>
+                  <td>Generated by text-embedding-3-small via OpenRouter</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: AUTH -->
+      <div class="tab-pane" id="tab-auth">
+        <div class="diagram-box">
+          <div class="diagram-header">
+            <div class="diagram-header-left">
+              <div class="diagram-label">Authentication Flow</div>
+              <div class="diagram-desc">— GitHub OAuth 2.0 → JWT issuance → WebSocket auth</div>
+            </div>
+          </div>
+          <div class="diagram-body" id="diagram-auth" style="overflow-y:auto">
+            <div class="loading">
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div><span style="margin-left:4px">Rendering diagram...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="prose-box">
+            <div class="prose-title">🔑 Auth Strategy: GitHub OAuth + Stateless JWT</div>
+            <ul class="step-list">
+              <li class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                  <div class="step-title">No Password, No Email Sign-up</div>
+                  <div class="step-desc">GitHub OAuth is the single identity provider. Developers already have GitHub —
+                    zero friction to sign in.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                  <div class="step-title">JWT is Stateless</div>
+                  <div class="step-desc">No session store needed. Every Lambda verifies the JWT signature locally using
+                    <code>JWT_SECRET</code>. Payload: <code>{userId, username, iat, exp}</code>. Token expires in 30
+                    days.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                  <div class="step-title">Secure Storage in VS Code</div>
+                  <div class="step-desc"><code>context.secrets.store()</code> uses the OS credential manager (Keychain
+                    on macOS, Credential Manager on Windows). Never in localStorage or settings.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                  <div class="step-title">URI Handler for Deep Link Return</div>
+                  <div class="step-desc">After OAuth, GitHub redirects to
+                    <code>vscode://veda-learn.veda-learn/auth?token=JWT</code>. VS Code's registered URI handler
+                    intercepts this and stores the token. No manual copy-paste.</div>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-num">5</div>
+                <div class="step-body">
+                  <div class="step-title">WebSocket Auth via Query Param</div>
+                  <div class="step-desc">WebSocket connections cannot send headers. The JWT is passed as
+                    <code>?token=JWT</code> in the WSS URL. <code>wsConnect.js</code> verifies it before storing the
+                    connectionId.</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="prose-box">
+            <div class="prose-title">🛡️ Security Considerations</div>
+            <div class="prose-body" style="margin-bottom:12px">
+              <strong>JWT Secret rotation:</strong> Stored in Lambda environment variables. Rotate by updating the env
+              var — all old tokens instantly invalidated.<br><br>
+              <strong>HTTPS only:</strong> API Gateway enforces TLS on all REST endpoints. No HTTP fallback.<br><br>
+              <strong>CORS:</strong> REST API Gateway configured to allow only the VS Code webview origin. Prevents CSRF
+              from browser-based attacks.<br><br>
+              <strong>Rate limit per user:</strong> DynamoDB TTL items enforce 20 API calls/minute per userId. Prevents
+              credit drain and abuse.<br><br>
+              <strong>No GitHub token stored:</strong> The GitHub access_token is used once in <code>auth.js</code> to
+              fetch user info, then discarded. Only the userId and JWT are persisted.
+            </div>
+            <div class="divider" style="margin:12px 0"></div>
+            <div class="prose-body">
+              <strong>Auth Guard Middleware (every protected Lambda):</strong><br>
+              <code>const token = event.headers?.Authorization?.replace('Bearer ', '');</code><br>
+              <code>const {userId} = jwt.verify(token, JWT_SECRET);</code><br><br>
+              Returns <code>401</code> if missing, expired, or tampered.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: WORKFLOW -->
+      <div class="tab-pane" id="tab-workflow">
+        <div class="diagram-box">
+          <div class="diagram-header">
+            <div class="diagram-header-left">
+              <div class="diagram-label">Complete System Workflow</div>
+              <div class="diagram-desc">— From first keystroke to lesson delivery and quiz completion</div>
+            </div>
+          </div>
+          <div class="diagram-body" id="diagram-workflow" style="overflow-y:auto;align-items:flex-start">
+            <div class="loading">
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div><span style="margin-left:4px">Rendering diagram...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="prose-box">
+            <div class="prose-title">📡 Real-Time Delivery: Why WebSocket over SSE</div>
+            <div class="prose-body">
+              Server-Sent Events (SSE) require a persistent HTTP connection, which is incompatible with AWS Lambda's
+              stateless, short-lived execution model.<br><br>
+              <strong>API Gateway WebSocket API</strong> solves this cleanly. The VS Code extension holds one persistent
+              WSS connection. When lesson.js finishes generating (after ~4–6 seconds of parallel AI calls + Polly), it
+              calls <code>ApiGatewayManagementApi.postToConnection(connectionId, payload)</code> to push the lesson
+              directly to the correct client.<br><br>
+              The connectionId is looked up from <code>veda-ws-connections</code> DynamoDB table using the userId
+              extracted from the JWT.
+            </div>
+          </div>
+          <div class="prose-box">
+            <div class="prose-title">🧩 Parallel Lesson Generation</div>
+            <div class="prose-body">
+              The three OpenRouter calls inside <code>lesson.js</code> run with <code>Promise.all()</code> — they
+              execute simultaneously, not sequentially. This is critical for keeping lesson latency under 5
+              seconds:<br><br>
+              <strong>Call 1 — Sonnet 4.5:</strong> Voice-optimized explanation (120 words, no markdown)<br>
+              <strong>Call 2 — Sonnet 4.5:</strong> Before/after code fix as JSON<br>
+              <strong>Call 3 — Gemini Flash:</strong> Mermaid.js diagram syntax<br><br>
+              After the parallel calls resolve, RAG context is fetched from OpenSearch, then Polly synthesizes the
+              audio. Total time: <strong>~4–7 seconds</strong> from analyze trigger to WebSocket push.
+            </div>
+          </div>
+        </div>
+        <div class="prose-box">
+          <div class="prose-title">🔄 Complete End-to-End Flow Summary</div>
+          <ul class="step-list">
+            <li class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <div class="step-title">Developer types code in VS Code</div>
+                <div class="step-desc"><code>onDidChangeTextDocument</code> fires on every keystroke. A 30-second
+                  debounce timer resets on each event. Only fires the API call after 30 seconds of no typing.</div>
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <div class="step-title">analyze.js classifies the code</div>
+                <div class="step-desc">Haiku 4.5 receives the full file content, returns structured JSON with
+                  mistakeType, conceptId, severity, and confidence. Only proceeds if confidence ≥ 0.85.</div>
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <div class="step-title">Rate lock acquired, mistake saved</div>
+                <div class="step-desc">A DynamoDB TTL item (30s) prevents duplicate lessons. The mistake is saved to
+                  veda-mistakes. lesson.js is invoked asynchronously — analyze.js returns 200 immediately.</div>
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <div class="step-title">Lesson generated in parallel</div>
+                <div class="step-desc">3 OpenRouter calls run simultaneously. RAG context fetched from OpenSearch.
+                  Amazon Polly synthesizes MP3. MP3 uploaded to S3. Presigned URL generated (1hr validity).</div>
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-num">5</div>
+              <div class="step-body">
+                <div class="step-title">Lesson pushed via WebSocket</div>
+                <div class="step-desc">lesson.js calls ApiGatewayManagementApi with the connectionId from DynamoDB. VS
+                  Code extension receives the lesson JSON + audioUrl over the persistent WSS connection.</div>
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-num">6</div>
+              <div class="step-body">
+                <div class="step-title">3-Panel sidebar renders</div>
+                <div class="step-desc">Webview renders: Panel 1 (explanation with typewriter), Panel 2 (before/after
+                  diff with highlight.js), Panel 3 (Mermaid diagram). Polly MP3 auto-plays via presigned S3 URL.</div>
+              </div>
+            </li>
+            <li class="step-item">
+              <div class="step-num">7</div>
+              <div class="step-body">
+                <div class="step-title">Quiz fires after acknowledgment</div>
+                <div class="step-desc">30 seconds after "Got it ✓" is clicked, quiz.js generates 2 MCQ questions via
+                  Haiku 4.5. Developer answers → confetti on correct → progressUpdate.js increments score and streak in
+                  DynamoDB.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#1c1f26',
+        primaryTextColor: '#e6edf3',
+        primaryBorderColor: '#30363d',
+        lineColor: '#7c3aed',
+        secondaryColor: '#21262d',
+        tertiaryColor: '#161b22',
+        background: '#0d1117',
+        mainBkg: '#161b22',
+        nodeBorder: '#30363d',
+        clusterBkg: '#1c2028',
+        titleColor: '#a78bfa',
+        edgeLabelBackground: '#21262d',
+        actorBorder: '#7c3aed',
+        actorBkg: '#1c1f26',
+        actorTextColor: '#e6edf3',
+        actorLineColor: '#30363d',
+        signalColor: '#a78bfa',
+        signalTextColor: '#e6edf3',
+        labelBoxBkgColor: '#21262d',
+        labelBoxBorderColor: '#30363d',
+        labelTextColor: '#e6edf3',
+        loopTextColor: '#8b949e',
+        noteBorderColor: '#30363d',
+        noteBkgColor: '#21262d',
+        noteTextColor: '#e6edf3',
+        activationBorderColor: '#7c3aed',
+        activationBkgColor: '#7c3aed22',
+        sequenceNumberColor: '#e6edf3',
+        classText: '#e6edf3',
+        fillType0: '#161b22',
+        fillType1: '#1c2028',
+        fillType2: '#21262d',
+      },
+      flowchart: { curve: 'basis', padding: 20 },
+      sequence: { mirrorActors: false, bottomMarginAdj: 10, useMaxWidth: true }
+    });
+
+    const tabMeta = {
+      overview: { title: 'System Overview', desc: 'High-level view of all services, their roles, and how they connect to power Veda Learn.' },
+      architecture: { title: 'Architecture Design', desc: 'Detailed component map — Lambda function routing, API Gateway endpoints, and data service connections.' },
+      database: { title: 'Database Design', desc: 'Full DynamoDB schema with 6 tables, key design, GSIs, TTL strategy, and the OpenSearch vector index.' },
+      auth: { title: 'Authentication Design', desc: 'GitHub OAuth 2.0 flow, JWT issuance, secure VS Code storage, and WebSocket authentication strategy.' },
+      workflow: { title: 'Complete System Workflow', desc: 'End-to-end journey: keystroke → detection → lesson generation → Polly audio → WebSocket delivery → quiz.' }
+    };
+
+    const diagrams = {
+      overview: `flowchart LR
+    VSC["VS Code Extension\n(TypeScript)"]
+    style VSC fill:#1e1b4b,stroke:#7c3aed,color:#e6edf3
+    APIR["API Gateway\nREST API"]
+    style APIR fill:#172554,stroke:#3b82f6,color:#e6edf3
+    APIW["API Gateway\nWebSocket API"]
+    style APIW fill:#172554,stroke:#3b82f6,color:#e6edf3
+    LAM["Lambda Functions\n8 Handlers"]
+    style LAM fill:#1c2028,stroke:#f59e0b,color:#e6edf3
+    DDB[("DynamoDB\n6 Tables")]
+    style DDB fill:#1c2028,stroke:#10b981,color:#e6edf3
+    OS[("OpenSearch Serverless\nVector Index")]
+    style OS fill:#1c2028,stroke:#06b6d4,color:#e6edf3
+    POL["Amazon Polly\nGenerative TTS"]
+    style POL fill:#1c2028,stroke:#8b5cf6,color:#e6edf3
+    S3[("Amazon S3\nAudio and Docs")]
+    style S3 fill:#1c2028,stroke:#f59e0b,color:#e6edf3
+    OR["OpenRouter API\nHaiku · Sonnet · Opus · Gemini"]
+    style OR fill:#1e1b4b,stroke:#a78bfa,color:#e6edf3
+    GH["GitHub OAuth 2.0"]
+    style GH fill:#1c2028,stroke:#6e7681,color:#e6edf3
+
+    VSC -->|"HTTPS + JWT Bearer"| APIR
+    VSC <-->|"WebSocket real-time"| APIW
+    APIR --> LAM
+    APIW --> LAM
+    LAM --> DDB
+    LAM --> OS
+    LAM --> POL
+    POL --> S3
+    S3 -->|"Presigned URL"| VSC
+    LAM -->|"AI inference"| OR
+    LAM --> GH`,
+
+      architecture: `flowchart TB
+    subgraph EXT["VS Code Extension"]
+      WATCH["Passive Watcher\n30s debounce"]
+      SIDEBAR["Webview Sidebar\n3 Panels"]
+      WSC_C["WebSocket Client\npersistent WSS"]
+      STORE["SecretStorage\nJWT token"]
+    end
+
+    subgraph GREST["API Gateway REST"]
+      EP1["POST /auth/github/callback"]
+      EP2["POST /api/analyze"]
+      EP3["POST /api/lesson/deep"]
+      EP4["POST /api/quiz"]
+      EP5["GET /api/progress/id"]
+      EP6["POST /api/progress/update"]
+    end
+
+    subgraph GWS["API Gateway WebSocket"]
+      WS1["connect route"]
+      WS2["disconnect route"]
+    end
+
+    subgraph LAMS["Lambda Functions"]
+      L1["auth.js\nOAuth + JWT"]
+      L2["analyze.js\nHaiku Classifier"]
+      L3["lesson.js\nParallel Gen + Polly"]
+      L4["quiz.js\nMCQ Generator"]
+      L5["progress.js\nRead Profile"]
+      L6["progressUpdate.js\nStreak + Score"]
+      L7["wsConnect.js"]
+      L8["wsDisconnect.js"]
+    end
+
+    subgraph DATA["Data and AI Services"]
+      DDB2[("DynamoDB")]
+      OS2[("OpenSearch")]
+      POL2["Amazon Polly"]
+      S3_2[("S3 Bucket")]
+      OR2["OpenRouter API"]
+      GH2["GitHub OAuth"]
+    end
+
+    WATCH -->|"code snapshot"| EP2
+    SIDEBAR -->|"fetch profile"| EP5
+    WSC_C <-->|"wss + token"| WS1
+
+    EP1 --> L1
+    EP2 --> L2
+    EP3 --> L3
+    EP4 --> L4
+    EP5 --> L5
+    EP6 --> L6
+    WS1 --> L7
+    WS2 --> L8
+
+    L1 --> GH2
+    L1 --> DDB2
+    L2 --> OR2
+    L2 --> DDB2
+    L2 -->|"async"| L3
+    L3 --> OR2
+    L3 --> OS2
+    L3 --> POL2
+    POL2 --> S3_2
+    L3 --> DDB2
+    L3 -->|"postToConnection"| WSC_C
+    L4 --> OR2
+    L5 --> DDB2
+    L6 --> DDB2
+    L7 --> DDB2
+    L8 --> DDB2`,
+
+      database: `classDiagram
+    class Users {
+      +PK userId String
+      +githubId String
+      +username String
+      +avatarUrl String
+      +skillScore Number
+      +streakDays Number
+      +lastActive String
+      +createdAt String
+    }
+    class Mistakes {
+      +PK mistakeId String
+      +GSI userId String
+      +language String
+      +mistakeType String
+      +conceptId String
+      +severity String
+      +confidence Float
+      +problematicCode String
+      +lineNumber Number
+      +createdAt String
+    }
+    class Lessons {
+      +PK lessonId String
+      +GSI userId String
+      +FK mistakeId String
+      +conceptId String
+      +explanation String
+      +codeBefore String
+      +codeAfter String
+      +diagramSyntax String
+      +audioS3Key String
+      +status String
+      +feedbackRating Number
+    }
+    class LearningProfiles {
+      +PK userId String
+      +SK language String
+      +lessonsCompleted Number
+      +overallScore Number
+      +weakAreas List
+      +updatedAt String
+    }
+    class WsConnections {
+      +PK userId String
+      +connectionId String
+      +connectedAt String
+    }
+    class RateLimits {
+      +PK lockKey String
+      +count Number
+      +userId String
+      +TTL ttl Number
+    }
+    class ConceptEmbeddings {
+      +OpenSearch Index
+      +conceptId keyword
+      +content text
+      +embedding knn_vector
+    }
+
+    Users "1" --> "N" Mistakes : creates
+    Users "1" --> "N" Lessons : owns
+    Users "1" --> "N" LearningProfiles : tracks per lang
+    Users "1" --> "1" WsConnections : live session
+    Mistakes "1" --> "1" Lessons : triggers
+    Lessons ..> ConceptEmbeddings : RAG enriched by`,
+
+      auth: `sequenceDiagram
+    actor Dev as Developer
+    participant Ext as VS Code Extension
+    participant APIG as API Gateway REST
+    participant Auth as Lambda auth.js
+    participant GH as GitHub OAuth
+    participant DDB as DynamoDB veda-users
+    participant WS as API Gateway WebSocket
+
+    Dev->>Ext: Click Sign in with GitHub
+    Ext->>Ext: vscode.env.openExternal(auth_url)
+    Note over Ext: System browser opens
+    APIG->>GH: Redirect to OAuth consent
+    GH->>Dev: Show permission screen
+    Dev->>GH: Approve Veda Learn
+    GH->>APIG: GET /auth/github/callback?code=xxx
+    APIG->>Auth: Invoke Lambda
+    Auth->>GH: POST /login/oauth/access_token
+    GH->>Auth: Return access_token
+    Auth->>GH: GET /user with Bearer token
+    GH->>Auth: Return user profile object
+    Auth->>DDB: PutItem with ConditionExpression
+    Note over DDB: Upsert user, preserve existing score
+    DDB->>Auth: 200 OK
+    Auth->>Auth: jwt.sign userId and username 30d expiry
+    Auth->>Ext: 302 to vscode://veda-learn/auth?token=JWT
+    Ext->>Ext: URI handler intercepts deep link
+    Ext->>Ext: context.secrets.store JWT
+    Ext->>WS: WebSocket connect wss://...?token=JWT
+    WS->>Auth: wsConnect Lambda verifies JWT
+    Auth->>DDB: Store connectionId in veda-ws-connections
+    Ext->>Dev: Render avatar and skill score in sidebar`,
+
+      workflow: `flowchart TD
+    A(["Developer opens file and types code"]) --> B["onDidChangeTextDocument fires"]
+    B --> C{"Still typing?\n30s debounce"}
+    C -->|"Typing continues"| B
+    C -->|"30s idle passes"| D["POST /api/analyze\nwith JWT Bearer token"]
+    D --> E["analyze.js Lambda"]
+    E --> F{"DynamoDB rate\nlock check"}
+    F -->|"Lock active"| G(["Skip — return teach: false"])
+    F -->|"No lock found"| H["Call Haiku 4.5\nvia OpenRouter"]
+    H --> I{"Confidence\ngreater than 0.85?"}
+    I -->|"Below threshold"| J(["Skip — return teach: false"])
+    I -->|"Confident mistake"| K["Save to veda-mistakes\nSet 30s rate lock TTL"]
+    K --> L["Async invoke lesson.js\nReturn 200 immediately"]
+
+    L --> M["lesson.js Lambda starts"]
+
+    subgraph PAR["Parallel OpenRouter Calls — Promise.all"]
+      N1["Sonnet 4.5\nVoice explanation"]
+      N2["Sonnet 4.5\nCode fix JSON"]
+      N3["Gemini Flash\nMermaid diagram"]
+    end
+
+    M --> PAR
+    PAR --> O["Embed conceptId\ntext-embedding-3-small"]
+    O --> P["kNN search\nOpenSearch k=3"]
+    P --> Q["Get RAG context docs"]
+    Q --> R["Amazon Polly\nGenerative TTS Ruth voice"]
+    R --> S["Upload MP3\nto S3 Bucket"]
+    S --> T["Generate Presigned URL\n1 hour expiry"]
+    T --> U["Save Lesson\nveda-lessons DynamoDB"]
+    U --> V["ApiGatewayManagementApi\npostToConnection"]
+    V --> W["WebSocket pushes\nlesson JSON + audioUrl"]
+
+    W --> X["Extension receives\npostMessage to Webview"]
+    X --> P1["Panel 1: Typewriter\nexplanation text"]
+    X --> P2["Panel 2: Code diff\nhighlight.js"]
+    X --> P3["Panel 3: Mermaid\ndiagram rendered"]
+    X --> AU["Polly MP3\nauto-plays from S3 URL"]
+
+    P1 & P2 & P3 --> Y["Developer reads\nand listens to lesson"]
+    AU --> Y
+    Y --> Z["Click Got it button"]
+    Z --> AA["30 second countdown"]
+    AA --> AB["POST /api/quiz\nconceptId + language"]
+    AB --> AC["Haiku 4.5 generates\n2 MCQ questions JSON"]
+    AC --> AD["Quiz card renders\n4 option buttons"]
+    AD --> AE{"Correct\nanswer?"}
+    AE -->|"Yes"| AF["Confetti animation"]
+    AE -->|"No"| AG["Show explanation"]
+    AF --> AH["POST /api/progress/update\nquizPassed: true"]
+    AG --> AH
+    AH --> AI["DynamoDB updates\nskillScore + streak + lastActive"]
+    AI --> AJ(["Webview animates\nscore increment"])`
+    };
+
+    const rendered = new Set();
+
+    async function renderDiagram(containerId, definition) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = '<div class="loading"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div><span style="margin-left:4px">Rendering...</span></div>';
+      try {
+        const id = 'g_' + containerId + '_' + Date.now();
+        const { svg } = await mermaid.render(id, definition);
+        el.innerHTML = svg;
+        el.querySelector('svg').style.maxWidth = '100%';
+      } catch (e) {
+        el.innerHTML = '<div style="color:#f87171;padding:20px;font-size:12px">Diagram render error. Details: ' + e.message + '</div>';
+      }
+    }
+
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.querySelector('[data-tab="' + tabId + '"]').classList.add('active');
+      const meta = tabMeta[tabId];
+      document.querySelector('.top-title').innerHTML = meta.title + ' <span class="top-badge">PROTOTYPE PLAN</span>';
+      document.getElementById('top-desc').textContent = meta.desc;
+      if (!rendered.has(tabId)) {
+        rendered.add(tabId);
+        const diagramId = 'diagram-' + tabId;
+        if (document.getElementById(diagramId) && diagrams[tabId]) {
+          setTimeout(() => renderDiagram(diagramId, diagrams[tabId]), 50);
+        }
+      }
+    }
+
+    // Initial render
+    window.addEventListener('load', () => {
+      renderDiagram('diagram-overview', diagrams.overview);
+      rendered.add('overview');
+    });
+  </script>
+</body>
+
+</html>
