@@ -1,3 +1,3 @@
-// handlers/lesson.js
+// handlers/lesson.js — stub
 module.exports.handler = async () => ({ statusCode: 200, body: JSON.stringify({ ok: true }) });
 module.exports.deepHandler = async () => ({ statusCode: 200, body: JSON.stringify({ ok: true }) });
