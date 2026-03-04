@@ -124,7 +124,7 @@ npm run compile
 
 ### AI Services
 - **OpenRouter API** (Claude Haiku, Sonnet, Opus; Gemini Flash)
-- **AWS Bedrock** (Titan Embeddings v2)
+- **Google Gemini** (text-embedding-004 for vector embeddings - FREE tier)
 - **Amazon Polly** (Generative TTS)
 
 ## 📊 Cost Estimate
@@ -132,6 +132,7 @@ npm run compile
 **4-Day Hackathon Budget:**
 - OpenSearch Serverless: ~$2-5
 - OpenRouter API: ~$5-8
+- Google Gemini Embeddings: FREE (1,500 req/day)
 - Lambda, DynamoDB, S3, Polly: Free tier
 - **Total: ~$7-13**
 

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Veda Learn - AWS Edition is a VS Code extension that teaches developers by detecting code mistakes and providing interactive lessons in real-time. The system watches developers code, uses AI to detect anti-patterns and mistakes, generates comprehensive lessons with explanations and code fixes, and delivers them via WebSocket with voice narration. The extension uses AWS services (Lambda, API Gateway, DynamoDB, OpenSearch Serverless, S3, Amazon Polly, Bedrock Titan Embeddings) for infrastructure and OpenRouter API for AI inference.
+Veda Learn - AWS Edition is a VS Code extension that teaches developers by detecting code mistakes and providing interactive lessons in real-time. The system watches developers code, uses AI to detect anti-patterns and mistakes, generates comprehensive lessons with explanations and code fixes, and delivers them via WebSocket with voice narration. The extension uses AWS services (Lambda, API Gateway, DynamoDB, OpenSearch Serverless, S3, Amazon Polly) for infrastructure, OpenRouter API for AI inference, and Google Gemini text-embedding-004 for vector embeddings.
 
 ## Glossary
 
@@ -112,7 +112,7 @@ Veda Learn - AWS Edition is a VS Code extension that teaches developers by detec
 
 #### Acceptance Criteria
 
-1. WHEN lesson generation begins, THE RAG_System SHALL generate an embedding for the conceptId using AWS Bedrock Titan Embeddings v2
+1. WHEN lesson generation begins, THE RAG_System SHALL generate an embedding for the conceptId using Google Gemini text-embedding-004 API
 2. WHEN an embedding is generated, THE RAG_System SHALL perform a k-NN search in OpenSearch Serverless with k=3
 3. WHEN search results are returned, THE RAG_System SHALL extract the content from the top 3 matching documents
 4. WHEN content is extracted, THE RAG_System SHALL concatenate the content with newline separators
@@ -248,7 +248,7 @@ Veda Learn - AWS Edition is a VS Code extension that teaches developers by detec
 #### Acceptance Criteria
 
 1. WHEN the seed script is executed, THE RAG_System SHALL iterate through the concept definitions
-2. WHEN processing each concept, THE RAG_System SHALL generate an embedding using AWS Bedrock Titan Embeddings v2
+2. WHEN processing each concept, THE RAG_System SHALL generate an embedding using Google Gemini text-embedding-004 API
 3. WHEN an embedding is generated, THE RAG_System SHALL create a document with conceptId, content, and embedding fields
 4. WHEN the document is created, THE RAG_System SHALL index it in OpenSearch Serverless with index name "concept-embeddings"
 5. WHEN indexing is complete, THE RAG_System SHALL log confirmation of the seeded concept
@@ -265,7 +265,7 @@ Veda Learn - AWS Edition is a VS Code extension that teaches developers by detec
 2. WHEN defining the index mapping, THE RAG_System SHALL create a conceptId field with keyword type
 3. WHEN defining the index mapping, THE RAG_System SHALL create a content field with text type
 4. WHEN defining the index mapping, THE RAG_System SHALL create an embedding field with knn_vector type
-5. WHEN configuring the embedding field, THE RAG_System SHALL set dimension to 1024
+5. WHEN configuring the embedding field, THE RAG_System SHALL set dimension to 768
 6. WHEN configuring the embedding field, THE RAG_System SHALL use HNSW method with FAISS engine and innerproduct space type
 
 

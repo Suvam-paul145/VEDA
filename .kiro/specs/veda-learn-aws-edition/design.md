@@ -75,8 +75,8 @@ Veda Learn - AWS Edition is a VS Code extension that provides real-time, AI-powe
 ┌───────▼────────────▼────────────▼────────────▼───────────────────┐
 │                      AWS Services                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
-│  │  DynamoDB    │  │  OpenSearch  │  │  Bedrock     │           │
-│  │  (6 tables)  │  │  Serverless  │  │  (Titan)     │           │
+│  │  DynamoDB    │  │  OpenSearch  │  │  Google      │           │
+│  │  (6 tables)  │  │  Serverless  │  │  Gemini API  │           │
 │  └──────────────┘  └──────────────┘  └──────────────┘           │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
 │  │  S3          │  │  Polly       │  │  OpenRouter  │           │
@@ -111,7 +111,7 @@ Veda Learn - AWS Edition is a VS Code extension that provides real-time, AI-powe
 
 **AI Services:**
 - OpenRouter API (Claude Haiku, Sonnet, Opus; Gemini Flash)
-- AWS Bedrock Titan Embeddings v2 (1024-dimensional vectors)
+- Google Gemini text-embedding-004 (768-dimensional vectors, FREE tier)
 - Amazon Polly Generative TTS (Ruth voice)
 
 ## Components and Interfaces
@@ -398,7 +398,7 @@ exports.generateEmbedding = async (text: string): Promise<number[]>
 ```
 
 **Behavior:**
-- Generates embedding using Bedrock Titan Embeddings v2 (1024 dimensions)
+- Generates embedding using Google Gemini text-embedding-004 API (768 dimensions)
 - Performs k-NN search in OpenSearch with k=3
 - Extracts and concatenates content from top 3 results
 - Returns combined context string
@@ -574,7 +574,7 @@ concepts/
       "content": { "type": "text" },
       "embedding": {
         "type": "knn_vector",
-        "dimension": 1024,
+        "dimension": 768,
         "method": {
           "name": "hnsw",
           "engine": "faiss",
@@ -593,7 +593,7 @@ concepts/
   "query": {
     "knn": {
       "embedding": {
-        "vector": [/* 1024-dimensional vector */],
+        "vector": [/* 768-dimensional vector */],
         "k": 3
       }
     }

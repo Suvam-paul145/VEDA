@@ -1,27 +1,31 @@
-# Veda Learn — AWS Edition
+# Veda Learn — AWS Edition (Updated)
 ## Complete 4-Day Executable Build Plan
 
-> **What changed from OpenRouter Edition:** All infrastructure is now AWS-native. AI inference still routes through OpenRouter. Zero Railway. Zero Supabase. Zero Upstash. Pure AWS + one API key.
+> **Key changes in this revision:**
+> - ❌ **AWS Bedrock / Titan Embeddings removed** — your account has 0 quota (on-demand inference disabled). No approval path during a hackathon.
+> - ✅ **Google Gemini `text-embedding-004`** replaces it — free tier, 1,500 req/day, 768-dim vectors. Get a key in 2 minutes at aistudio.google.com.
+> - ✅ **Auth simplified** — GitHub OAuth + Lambda + JWT only. No AWS Cognito. No additional auth services.
+> - Everything else stays the same.
 
 ---
 
 ## Stack Overview
 
-| Layer | OpenRouter Edition | AWS Edition | Cost |
-|-------|-------------------|-------------|------|
-| AI Models | OpenRouter API | **OpenRouter API** (kept) | ~$8 total |
-| Auth | GitHub OAuth + JWT | **GitHub OAuth + JWT via Lambda** | Free |
-| Database | Supabase (PostgreSQL) | **Amazon DynamoDB** | Free tier |
-| Vector Store | Supabase pgvector | **OpenSearch Serverless** | ~$0.24/OCU-hr |
-| Embeddings | openai/text-embedding-3-small | **AWS Titan Embeddings v2** | ~$0.02/1M tokens |
-| Backend Compute | Express.js on Railway | **AWS Lambda** | Free tier |
-| API Layer | Express routes + SSE | **API Gateway REST + WebSocket API** | Free tier |
-| Real-Time Push | Server-Sent Events | **WebSocket API → Lambda → DynamoDB** | Free tier |
-| Voice TTS | Web Speech API (browser) | **Amazon Polly Generative TTS** | Free tier (5M chars) |
-| File Storage | Supabase Storage | **Amazon S3** | Free tier |
-| Rate Limiting | Upstash Redis | **DynamoDB TTL items** | Free tier |
+| Layer | Previous Plan | This Build | Cost |
+|-------|--------------|------------|------|
+| AI Models | OpenRouter API | **OpenRouter API** (unchanged) | ~$8 total |
+| Auth | GitHub OAuth + JWT | **GitHub OAuth + JWT** (simplified, Lambda only) | Free |
+| Database | Amazon DynamoDB | **Amazon DynamoDB** (unchanged) | Free tier |
+| Vector Store | OpenSearch Serverless | **OpenSearch Serverless** (unchanged) | ~$0.24/OCU-hr |
+| Embeddings | ~~AWS Titan Embeddings V2~~ | **Google Gemini text-embedding-004** (FREE) | $0.00 |
+| Backend Compute | AWS Lambda | **AWS Lambda** (unchanged) | Free tier |
+| API Layer | API Gateway REST + WebSocket | **API Gateway REST + WebSocket** (unchanged) | Free tier |
+| Real-Time Push | WebSocket API | **WebSocket API** (unchanged) | Free tier |
+| Voice TTS | Amazon Polly Generative | **Amazon Polly Generative** (unchanged) | Free tier (5M chars) |
+| File Storage | Amazon S3 | **Amazon S3** (unchanged) | Free tier |
+| Rate Limiting | DynamoDB TTL items | **DynamoDB TTL items** (unchanged) | Free tier |
 
-**Total AWS infra cost (4 days): ~$2–5. Total AI cost: ~$5–8. Grand total: ~$7–13.**
+**Total AWS infra cost (4 days): ~$2–4. Total AI cost: ~$5–8. Gemini embeddings: $0. Grand total: ~$7–12.**
 
 ---
 
@@ -50,7 +54,7 @@ API Gateway (WebSocket API)  ◄──── VS Code Extension (persistent WS)
 AWS Services Used by Lambdas:
   ├── DynamoDB        → Users, Mistakes, Lessons, LearningProfiles, WsConnections, RateLimits
   ├── OpenSearch Serverless → concept_embeddings index (vector search)
-  ├── Bedrock (Titan) → generate embeddings for RAG
+  ├── Google Gemini text-embedding-004 → generate 768-dim vectors (FREE external API)
   ├── Amazon Polly    → synthesize lesson explanation → MP3
   ├── Amazon S3       → store Polly MP3 audio + concept seed docs
   └── OpenRouter API  → Haiku (classify) · Sonnet (lesson+fix) · Gemini Flash (diagram) · Opus (deep)
@@ -91,7 +95,7 @@ aws configure
 - `AmazonDynamoDBFullAccess`
 - `AmazonPollyFullAccess`
 - `AmazonS3FullAccess`
-- `AmazonBedrockFullAccess`
+- `# AmazonBedrockFullAccess REMOVED - using Gemini free API instead`
 - `AmazonOpenSearchServiceFullAccess`
 - `AmazonAPIGatewayInvokeFullAccess`
 - `CloudWatchLogsFullAccess`
@@ -251,7 +255,7 @@ index_body = {
     "properties": {
       "conceptId": {"type": "keyword"},
       "content":   {"type": "text"},
-      "embedding": {"type": "knn_vector", "dimension": 1024,
+      "embedding": {"type": "knn_vector", "dimension": 768,
                     "method": {"name":"hnsw","engine":"faiss","space_type":"innerproduct"}}
     }
   }
@@ -261,13 +265,13 @@ r = requests.put(f"{OPENSEARCH_ENDPOINT}/{INDEX_NAME}", json=index_body, auth=au
 print(r.status_code, r.json())
 ```
 
-> **Note:** AWS Titan Embeddings v2 outputs **1024-dimensional** vectors. Set `dimension: 1024` in the index.
+> **Note:** Google Gemini text-embedding-004 outputs **1024-dimensional** vectors. Set `dimension: 768` in the index.
 
 ### 5. Enable Bedrock Titan Embeddings (5 min)
 
 ```
 AWS Console → Amazon Bedrock → Model access → Request access:
-  ✅ Amazon Titan Text Embeddings V2  (model ID: amazon.titan-embed-text-v2:0)
+  ✅ Amazon Titan Text Embeddings V2  (model ID: google/text-embedding-004 (Gemini free API))
 Access is instant — no approval wait.
 ```
 
@@ -1073,8 +1077,8 @@ const osClient = new Client({
 
 async function getTitanEmbedding(text) {
   const cmd = new InvokeModelCommand({
-    modelId: 'amazon.titan-embed-text-v2:0',
-    body: JSON.stringify({ inputText: text, dimensions: 1024, normalize: true }),
+    modelId: 'google/text-embedding-004 (Gemini free API)',
+    body: JSON.stringify({ inputText: text, dimensions: 768, normalize: true }),
     contentType: 'application/json',
     accept: 'application/json'
   });
@@ -1127,8 +1131,8 @@ const osClient = new Client({
 async function ragQuery(conceptId) {
   // Embed the query with Titan
   const cmd = new InvokeModelCommand({
-    modelId: 'amazon.titan-embed-text-v2:0',
-    body: JSON.stringify({ inputText: `Explain the concept: ${conceptId}`, dimensions: 1024, normalize: true }),
+    modelId: 'google/text-embedding-004 (Gemini free API)',
+    body: JSON.stringify({ inputText: `Explain the concept: ${conceptId}`, dimensions: 768, normalize: true }),
     contentType: 'application/json', accept: 'application/json'
   });
   const res = await bedrock.send(cmd);
@@ -1483,7 +1487,7 @@ aws lambda invoke --function-name veda-learn-api-dev-quiz    /dev/null
 | Amazon DynamoDB | Free tier (25 GB) | ~1 MB | $0.00 |
 | Amazon S3 | Free tier (5 GB) | ~50 MB audio | $0.00 |
 | Amazon Polly Generative | $0.030/1K chars | ~50K chars | ~$1.50 |
-| AWS Bedrock Titan Embeddings v2 | $0.020/1M tokens | ~100K tokens | ~$0.002 |
+| Google Gemini Embeddings (text-embedding-004) | Free (1500 req/day) | ~1K embeds | $0.00 |
 | OpenSearch Serverless | $0.24/OCU-hr | ~10 hrs | ~$2.40 |
 | **TOTAL** | | | **~$8–13** |
 
@@ -1511,3 +1515,153 @@ aws lambda invoke --function-name veda-learn-api-dev-quiz    /dev/null
 ---
 
 *Veda Learn — AWS Edition | 4 Days · 20 Hours · Full AWS Stack · OpenRouter Intelligence · Build to Win*
+
+---
+
+## ⚠️ Embedding Replacement Guide (Titan → Gemini)
+
+Your AWS account has **zero quota** for Titan Embeddings V2 on-demand inference. This section replaces all Bedrock/Titan embedding code with the **free Google Gemini API**.
+
+### Install the Gemini SDK
+
+```bash
+cd veda-learn-api
+npm install @google/generative-ai
+```
+
+### lib/geminiEmbed.js — Drop-in Replacement
+
+```javascript
+// lib/geminiEmbed.js
+// Replaces ALL Bedrock/Titan embedding code.
+// Free tier: 1,500 requests/day, 1,500,000 tokens/day
+// Output: 768-dimensional float array (innerproduct similarity)
+
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genai.getGenerativeModel({ model: 'text-embedding-004' });
+
+async function getEmbedding(text) {
+  const result = await model.embedContent(text);
+  return result.embedding.values; // float32[] of length 768
+}
+
+module.exports = { getEmbedding };
+```
+
+### Updated RAG Seeder (seed.js) — No Bedrock Required
+
+```javascript
+// handlers/seed.js — run once locally: node handlers/seed.js
+require('dotenv').config();
+const { getEmbedding } = require('../lib/geminiEmbed');
+const { Client }       = require('@opensearch-project/opensearch');
+const { AwsSigv4Signer } = require('@opensearch-project/opensearch/aws');
+const { defaultProvider } = require('@aws-sdk/credential-provider-node');
+
+const osClient = new Client({
+  ...AwsSigv4Signer({ region: 'us-east-1', service: 'aoss', getCredentials: defaultProvider() }),
+  node: process.env.OPENSEARCH_ENDPOINT
+});
+
+const concepts = [
+  { id: 'mutable-default',  content: 'In Python, default argument values are evaluated only once when the function is defined, not each time it is called. Using a mutable default like a list or dict means all calls share the same object, causing unexpected state accumulation across invocations.' },
+  { id: 'callback-hell',    content: 'Callback hell occurs when multiple asynchronous operations are nested as callbacks, creating a deeply indented pyramid structure. Each level of nesting makes error handling and debugging harder. Async/await and Promises flatten this into readable sequential code.' },
+  { id: 'any-type',         content: 'Using the any type in TypeScript disables all type checking for that variable. This defeats the purpose of TypeScript entirely, hides runtime errors that strict typing would catch at compile time, and makes refactoring dangerous.' },
+  { id: 'null-ref',         content: 'Null reference errors crash programs when code accesses a property or calls a method on a null or undefined value. Optional chaining (?.), nullish coalescing (??), and explicit null checks prevent these runtime errors.' },
+  { id: 'n-plus-one',       content: 'The N+1 query problem occurs when code fetches a list with one query and then runs N additional queries for each item. This creates O(N) database round trips. Eager loading, batch queries, or JOIN operations solve this in a constant number of queries.' },
+  { id: 'sql-injection',    content: 'SQL injection occurs when user input is concatenated directly into a SQL query string. An attacker can close the query and inject malicious SQL commands. Parameterized queries and prepared statements prevent this by treating input as data, never as executable code.' },
+  { id: 'memory-leak',      content: 'Memory leaks in JavaScript happen when references to objects are kept alive unintentionally, preventing garbage collection. Common causes: event listeners not removed after use, closures holding references to large objects, and detached DOM nodes referenced by JavaScript.' },
+  { id: 'dry-violation',    content: 'DRY (Do Not Repeat Yourself) violations copy the same logic into multiple places. When that logic changes, every copy must be updated or bugs appear. Extract shared logic into a reusable function, class, or module with a single source of truth.' },
+  { id: 'god-object',       content: 'A God Object is a class that knows too much or does too much, violating the Single Responsibility Principle. It accumulates unrelated responsibilities, making it hard to test, change, or reason about. Refactor by extracting focused, cohesive classes.' },
+  { id: 'missing-usememo',  content: 'In React, components re-render whenever their parent renders. Expensive calculations in the component body run on every render. useMemo memoizes the result and only recalculates when its declared dependencies change, preventing unnecessary computation.' },
+];
+
+async function seedAll() {
+  for (const concept of concepts) {
+    const embedding = await getEmbedding(concept.content);
+    await osClient.index({
+      index: 'concept-embeddings',
+      body:  { conceptId: concept.id, content: concept.content, embedding }
+    });
+    console.log(`✅ Seeded: ${concept.id} (${embedding.length}-dim)`);
+    // Small delay to respect free tier rate limit
+    await new Promise(r => setTimeout(r, 500));
+  }
+  console.log('All 10 concepts seeded.');
+}
+
+seedAll().catch(console.error);
+```
+
+### Updated lib/opensearch.js — RAG Query with Gemini
+
+```javascript
+// lib/opensearch.js
+require('dotenv').config();
+const { getEmbedding }    = require('./geminiEmbed');
+const { Client }          = require('@opensearch-project/opensearch');
+const { AwsSigv4Signer }  = require('@opensearch-project/opensearch/aws');
+const { defaultProvider } = require('@aws-sdk/credential-provider-node');
+
+const osClient = new Client({
+  ...AwsSigv4Signer({ region: 'us-east-1', service: 'aoss', getCredentials: defaultProvider() }),
+  node: process.env.OPENSEARCH_ENDPOINT
+});
+
+async function ragQuery(conceptId) {
+  // Embed the query with Gemini (free)
+  const queryVector = await getEmbedding(`Explain the ${conceptId} code pattern and why it is harmful`);
+
+  // kNN search in OpenSearch Serverless — returns top 3 closest concept docs
+  const { body } = await osClient.search({
+    index: 'concept-embeddings',
+    body: {
+      size: 3,
+      query: {
+        knn: {
+          embedding: { vector: queryVector, k: 3 }
+        }
+      }
+    }
+  });
+
+  return body.hits.hits.map(h => h._source.content).join('\n\n');
+}
+
+module.exports = { ragQuery };
+```
+
+### Remove from Package Installations
+
+Do NOT install `@aws-sdk/client-bedrock-runtime` — it is no longer needed.
+Do NOT add `AmazonBedrockFullAccess` to your IAM role — it is no longer needed.
+
+### Updated OpenSearch Index Dimension
+
+Your index must use **768 dimensions** (not 1024). When you run `create_index.py`:
+
+```json
+"embedding": {
+  "type": "knn_vector",
+  "dimension": 768,
+  "method": { "name": "hnsw", "engine": "faiss", "space_type": "innerproduct" }
+}
+```
+
+If you already created the index with 1024 dimensions, delete and recreate:
+```bash
+# Delete and recreate — this is the seed index, safe to wipe
+python -c "
+import boto3, requests
+from requests_aws4auth import AWS4Auth
+session = boto3.Session(region_name='us-east-1')
+creds = session.get_credentials()
+auth = AWS4Auth(creds.access_key, creds.secret_key, 'us-east-1', 'aoss', session_token=creds.token)
+r = requests.delete('YOUR_OPENSEARCH_ENDPOINT/concept-embeddings', auth=auth)
+print(r.status_code, r.json())
+"
+# Then re-run create_index.py with dimension: 768
+```
+
