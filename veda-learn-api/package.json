@@ -46,6 +46,7 @@
     "@types/jest": "^29.0.0",
     "jest": "^29.0.0",
     "serverless": "^3.40.0",
+    "serverless-dotenv-plugin": "^6.0.0",
     "serverless-offline": "^13.9.0"
   },
   "directories": {

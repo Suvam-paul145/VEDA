@@ -1,6 +1,8 @@
 service: veda-learn-api
 frameworkVersion: '3'
 
+useDotenv: true
+
 provider:
   name: aws
   runtime: nodejs20.x
@@ -15,6 +17,7 @@ provider:
     JWT_SECRET: ${env:JWT_SECRET}
     OPENSEARCH_ENDPOINT: ${env:OPENSEARCH_ENDPOINT}
     S3_AUDIO_BUCKET: ${env:S3_AUDIO_BUCKET}
+    S3_CONCEPTS_BUCKET: ${env:S3_CONCEPTS_BUCKET}
     WS_API_ENDPOINT: ${env:WS_API_ENDPOINT}
 
 functions:
@@ -38,7 +41,7 @@ functions:
 
   lesson:
     handler: handlers/lesson.handler
-    timeout: 60
+    timeout: 30
     events:
       - http:
           path: api/lesson
@@ -47,7 +50,7 @@ functions:
 
   lessonDeep:
     handler: handlers/lesson.deepHandler
-    timeout: 60
+    timeout: 30
     events:
       - http:
           path: api/lesson/deep
@@ -92,3 +95,7 @@ functions:
     events:
       - websocket:
           route: $disconnect
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
