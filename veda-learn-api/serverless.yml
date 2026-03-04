@@ -6,7 +6,7 @@ provider:
   runtime: nodejs20.x
   region: us-east-1
   # Replace with your IAM role ARN after creating it
-  role: arn:aws:iam::YOUR_ACCOUNT_ID:role/veda-lambda-role
+  role: arn:aws:iam::034476915822:role/veda-lambda-role
   environment:
     OPENROUTER_API_KEY: ${env:OPENROUTER_API_KEY}
     GITHUB_CLIENT_ID: ${env:GITHUB_CLIENT_ID}
