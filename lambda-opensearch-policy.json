@@ -1,0 +1,16 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "OpenSearchServerlessAccess",
+            "Effect": "Allow",
+            "Action": [
+                "aoss:APIAccessAll"
+            ],
+            "Resource": [
+                "arn:aws:aoss:us-east-1:034476915822:collection/veda-concepts",
+                "arn:aws:aoss:us-east-1:034476915822:index/veda-concepts/*"
+            ]
+        }
+    ]
+}
