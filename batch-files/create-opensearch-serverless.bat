@@ -45,44 +45,62 @@ timeout /t 10 /nobreak >nul
 echo.
 
 echo Retrieving collection endpoint...
-for /f "tokens=*" %%i in ('aws opensearchserverless list-collections --query "collectionSummaries[?name==''veda-concepts''].collectionEndpoint" --output text') do set OPENSEARCH_ENDPOINT=%%i
+for /f "tokens=*" %%i in ('aws opensearchserverless list-collections --query "collectionSummaries[?name==`veda-concepts`].collectionEndpoint" --output text') do set OPENSEARCH_ENDPOINT=%%i
 echo Collection endpoint: %OPENSEARCH_ENDPOINT%
 echo.
 
-echo [5/5] Creating vector index with 768 dimensions...
-echo Creating temporary Python script for index creation...
+REM Check if collection was created successfully
+if "%OPENSEARCH_ENDPOINT%"=="" (
+    echo ❌ Collection not found or not active yet. Skipping index creation.
+    echo Please wait for collection to become active and run index creation manually.
+    goto :skip_index
+)
 
-echo import boto3, requests > create_index_temp.py
-echo from requests_aws4auth import AWS4Auth >> create_index_temp.py
-echo. >> create_index_temp.py
-echo OPENSEARCH_ENDPOINT = "%OPENSEARCH_ENDPOINT%" >> create_index_temp.py
-echo INDEX_NAME = "concept-embeddings" >> create_index_temp.py
-echo. >> create_index_temp.py
-echo session = boto3.Session() >> create_index_temp.py
-echo creds = session.get_credentials() >> create_index_temp.py
-echo auth = AWS4Auth(creds.access_key, creds.secret_key, 'us-east-1', 'aoss', session_token=creds.token) >> create_index_temp.py
-echo. >> create_index_temp.py
-echo index_body = { >> create_index_temp.py
-echo   "settings": {"index.knn": True}, >> create_index_temp.py
-echo   "mappings": { >> create_index_temp.py
-echo     "properties": { >> create_index_temp.py
-echo       "conceptId": {"type": "keyword"}, >> create_index_temp.py
-echo       "content":   {"type": "text"}, >> create_index_temp.py
-echo       "embedding": {"type": "knn_vector", "dimension": 768, >> create_index_temp.py
-echo                     "method": {"name":"hnsw","engine":"faiss","space_type":"innerproduct"}} >> create_index_temp.py
-echo     } >> create_index_temp.py
-echo   } >> create_index_temp.py
-echo } >> create_index_temp.py
-echo. >> create_index_temp.py
-echo r = requests.put(f"{OPENSEARCH_ENDPOINT}/{INDEX_NAME}", json=index_body, auth=auth) >> create_index_temp.py
-echo print(f"Index creation status: {r.status_code}") >> create_index_temp.py
-echo if r.status_code == 200: >> create_index_temp.py
-echo     print("✅ Vector index created successfully with 768 dimensions") >> create_index_temp.py
-echo else: >> create_index_temp.py
-echo     print(f"❌ Index creation failed: {r.text}") >> create_index_temp.py
+echo [5/5] Creating vector index with 768 dimensions...
+echo Installing required Python packages...
+pip install boto3 requests requests-aws4auth >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ❌ Failed to install Python packages. Please install manually:
+    echo    pip install boto3 requests requests-aws4auth
+    goto :skip_index
+)
+
+echo Creating temporary Python script for index creation...
+(
+echo import boto3, requests
+echo from requests_aws4auth import AWS4Auth
+echo.
+echo OPENSEARCH_ENDPOINT = "%OPENSEARCH_ENDPOINT%"
+echo INDEX_NAME = "concept-embeddings"
+echo.
+echo session = boto3.Session^(^)
+echo creds = session.get_credentials^(^)
+echo auth = AWS4Auth^(creds.access_key, creds.secret_key, 'us-east-1', 'aoss', session_token=creds.token^)
+echo.
+echo index_body = {
+echo   "settings": {"index.knn": True},
+echo   "mappings": {
+echo     "properties": {
+echo       "conceptId": {"type": "keyword"},
+echo       "content":   {"type": "text"},
+echo       "embedding": {"type": "knn_vector", "dimension": 768,
+echo                     "method": {"name":"hnsw","engine":"faiss","space_type":"innerproduct"}}
+echo     }
+echo   }
+echo }
+echo.
+echo r = requests.put^(f"{OPENSEARCH_ENDPOINT}/{INDEX_NAME}", json=index_body, auth=auth^)
+echo print^(f"Index creation status: {r.status_code}"^)
+echo if r.status_code == 200:
+echo     print^("✅ Vector index created successfully with 768 dimensions"^)
+echo else:
+echo     print^(f"❌ Index creation failed: {r.text}"^)
+) > create_index_temp.py
 
 python create_index_temp.py
 del create_index_temp.py
+
+:skip_index
 
 echo.
 echo ==========================================

@@ -1,0 +1,36 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "aoss:CreateSecurityPolicy",
+        "aoss:GetSecurityPolicy",
+        "aoss:ListSecurityPolicies",
+        "aoss:UpdateSecurityPolicy",
+        "aoss:DeleteSecurityPolicy",
+        "aoss:CreateAccessPolicy",
+        "aoss:GetAccessPolicy",
+        "aoss:ListAccessPolicies",
+        "aoss:UpdateAccessPolicy",
+        "aoss:DeleteAccessPolicy",
+        "aoss:CreateCollection",
+        "aoss:GetCollection",
+        "aoss:ListCollections",
+        "aoss:UpdateCollection",
+        "aoss:DeleteCollection",
+        "aoss:BatchGetCollection",
+        "aoss:CreateVpcEndpoint",
+        "aoss:GetVpcEndpoint",
+        "aoss:ListVpcEndpoints",
+        "aoss:UpdateVpcEndpoint",
+        "aoss:DeleteVpcEndpoint",
+        "aoss:BatchGetVpcEndpoint",
+        "aoss:TagResource",
+        "aoss:UntagResource",
+        "aoss:ListTagsForResource"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
