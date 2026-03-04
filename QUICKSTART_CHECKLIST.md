@@ -90,8 +90,8 @@ Use this checklist to track your setup progress. Check off each item as you comp
 
 ### Serverless Configuration
 - [ ] Opened `serverless.yml`
-- [ ] Replaced `YOUR_ACCOUNT_ID` with actual AWS account ID
-- [ ] Verified IAM role ARN is correct
+- [x] ✅ AWS Account ID already configured: `034476915822`
+- [x] ✅ IAM role ARN is correct: `veda-lambda-role`
 
 ### First Deployment
 - [ ] Ran `npx serverless deploy`

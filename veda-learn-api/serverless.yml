@@ -5,23 +5,22 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
-  # Replace with your IAM role ARN after creating it
   role: arn:aws:iam::034476915822:role/veda-lambda-role
+  timeout: 29
   environment:
     OPENROUTER_API_KEY: ${env:OPENROUTER_API_KEY}
+    GEMINI_API_KEY: ${env:GEMINI_API_KEY}
     GITHUB_CLIENT_ID: ${env:GITHUB_CLIENT_ID}
     GITHUB_CLIENT_SECRET: ${env:GITHUB_CLIENT_SECRET}
     JWT_SECRET: ${env:JWT_SECRET}
     OPENSEARCH_ENDPOINT: ${env:OPENSEARCH_ENDPOINT}
     S3_AUDIO_BUCKET: ${env:S3_AUDIO_BUCKET}
-    S3_CONCEPTS_BUCKET: ${env:S3_CONCEPTS_BUCKET}
     WS_API_ENDPOINT: ${env:WS_API_ENDPOINT}
 
 functions:
-  # REST API endpoints
   authCallback:
     handler: handlers/auth.callback
-    timeout: 30
+    timeout: 10
     events:
       - http:
           path: auth/github/callback
@@ -30,7 +29,7 @@ functions:
 
   analyze:
     handler: handlers/analyze.handler
-    timeout: 30
+    timeout: 29
     events:
       - http:
           path: api/analyze
@@ -82,7 +81,6 @@ functions:
           method: post
           cors: true
 
-  # WebSocket endpoints
   wsConnect:
     handler: handlers/wsConnect.handler
     events:
@@ -94,6 +92,3 @@ functions:
     events:
       - websocket:
           route: $disconnect
-
-plugins:
-  - serverless-offline

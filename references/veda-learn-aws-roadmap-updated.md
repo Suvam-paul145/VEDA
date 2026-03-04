@@ -224,7 +224,7 @@ aws opensearchserverless create-access-policy \
   --policy '[{"Description":"Lambda access","Rules":[
     {"Resource":["collection/veda-concepts"],"Permission":["aoss:*"],"ResourceType":"collection"},
     {"Resource":["index/veda-concepts/*"],"Permission":["aoss:*"],"ResourceType":"index"}],
-    "Principal":["arn:aws:iam::YOUR_ACCOUNT_ID:role/veda-lambda-role"]}]'
+    "Principal":["arn:aws:iam::034476915822:role/veda-lambda-role"]}]'
 
 # Create collection
 aws opensearchserverless create-collection \
@@ -396,7 +396,7 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
-  role: arn:aws:iam::YOUR_ACCOUNT_ID:role/veda-lambda-role
+  role: arn:aws:iam::034476915822:role/veda-lambda-role
   environment:
     OPENROUTER_API_KEY: ${env:OPENROUTER_API_KEY}
     GITHUB_CLIENT_ID: ${env:GITHUB_CLIENT_ID}

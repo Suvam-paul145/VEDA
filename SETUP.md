@@ -182,7 +182,7 @@ aws s3api put-bucket-cors \
 
 ### Step 4: Create OpenSearch Serverless Collection (10 minutes)
 
-**Note:** Replace `YOUR_ACCOUNT_ID` with your actual AWS account ID.
+**Note:** Your AWS account ID is: `034476915822`
 
 ```bash
 # Create encryption policy
@@ -199,11 +199,11 @@ aws opensearchserverless create-security-policy \
   --policy '[{"Rules":[{"Resource":["collection/veda-concepts"],"ResourceType":"collection"},{"Resource":["collection/veda-concepts"],"ResourceType":"dashboard"}],"AllowFromPublic":true}]' \
   --region us-east-1
 
-# Create data access policy (replace YOUR_ACCOUNT_ID)
+# Create data access policy (replace with your account ID: 034476915822)
 aws opensearchserverless create-access-policy \
   --name veda-access \
   --type data \
-  --policy '[{"Description":"Lambda access","Rules":[{"Resource":["collection/veda-concepts"],"Permission":["aoss:*"],"ResourceType":"collection"},{"Resource":["index/veda-concepts/*"],"Permission":["aoss:*"],"ResourceType":"index"}],"Principal":["arn:aws:iam::YOUR_ACCOUNT_ID:role/veda-lambda-role"]}]' \
+  --policy '[{"Description":"Lambda access","Rules":[{"Resource":["collection/veda-concepts"],"Permission":["aoss:*"],"ResourceType":"collection"},{"Resource":["index/veda-concepts/*"],"Permission":["aoss:*"],"ResourceType":"index"}],"Principal":["arn:aws:iam::034476915822:role/veda-lambda-role"]}]' \
   --region us-east-1
 
 # Create collection
@@ -373,10 +373,10 @@ openssl rand -hex 32
 
 ### Step 3: Update serverless.yml (2 minutes)
 
-Edit `serverless.yml` and replace `YOUR_ACCOUNT_ID` with your AWS account ID:
+Edit `serverless.yml` and replace with your AWS account ID (034476915822):
 
 ```yaml
-role: arn:aws:iam::YOUR_ACCOUNT_ID:role/veda-lambda-role
+role: arn:aws:iam::034476915822:role/veda-lambda-role
 ```
 
 ### Step 4: Deploy Lambda Functions (5 minutes)
