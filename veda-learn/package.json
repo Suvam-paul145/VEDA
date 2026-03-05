@@ -1,8 +1,9 @@
 {
   "name": "veda-learn",
-  "displayName": "veda-learn",
+  "displayName": "Veda Learn",
   "description": "AI mentor inside VS Code",
   "version": "0.0.1",
+  "publisher": "veda-learn",
   "engines": {
     "vscode": "^1.109.0"
   },
@@ -10,7 +11,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onUri"
   ],
   "main": "./out/extension.js",
   "contributes": {
