@@ -1,0 +1,69 @@
+{
+  "name": "veda-learn",
+  "displayName": "veda-learn",
+  "description": "AI mentor inside VS Code",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.109.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "veda",
+          "title": "Veda Learn",
+          "icon": "$(mortar-board)"
+        }
+      ]
+    },
+    "views": {
+      "veda": [
+        {
+          "type": "webview",
+          "id": "veda.sidebar",
+          "name": "Veda Learn"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "veda.login",
+        "title": "Veda: Sign in with GitHub"
+      },
+      {
+        "command": "veda.logout",
+        "title": "Veda: Sign out"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.109.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
+  },
+  "dependencies": {
+    "@types/ws": "^8.18.1",
+    "node-fetch": "^3.3.2",
+    "ws": "^8.19.0"
+  }
+}
