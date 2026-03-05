@@ -3,6 +3,7 @@
   "displayName": "Veda Learn",
   "description": "AI mentor inside VS Code",
   "version": "0.0.1",
+  "icon": "public/Extension-logo.png",
   "publisher": "veda-learn",
   "engines": {
     "vscode": "^1.109.0"
