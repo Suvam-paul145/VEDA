@@ -1,51 +1,53 @@
-# veda-learn README
+# Veda Learn - AI Coding Mentor for VS Code
 
-This is the README for your extension "veda-learn". After writing up a brief description, we recommend including the following sections.
+Veda Learn is an intelligent VS Code extension that provides real-time code analysis, personalized lessons, and interactive quizzes to help developers improve their coding skills.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- **Real-time Code Analysis**: Automatically analyzes your code as you type and identifies potential improvements
+- **Personalized Lessons**: Generates custom lessons based on your coding patterns and mistakes
+- **Interactive Quizzes**: Test your knowledge with AI-generated quizzes tailored to your skill level
+- **GitHub Integration**: Seamless authentication and progress tracking
+- **Multi-language Support**: Works with JavaScript, Python, and other popular programming languages
+- **Live Feedback**: Real-time suggestions and explanations via WebSocket connection
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- VS Code 1.109.0 or higher
+- Internet connection for AI-powered features
+- GitHub account for authentication
+
+## Getting Started
+
+1. Install the extension
+2. Click the Veda Learn icon in the Activity Bar
+3. Sign in with your GitHub account
+4. Start coding and receive real-time feedback!
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+* `veda.autoAnalysis`: Enable/disable automatic code analysis
+* `veda.lessonDifficulty`: Set default lesson difficulty level
+* `veda.notifications`: Control notification preferences
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Initial connection may take a few seconds
+- Large files (>1MB) may have slower analysis
+- WebSocket connection requires stable internet
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+Initial release of Veda Learn:
+- GitHub OAuth authentication
+- Real-time code analysis
+- AI-powered lesson generation
+- Interactive quiz system
+- WebSocket-based live updates
 
 ---
 

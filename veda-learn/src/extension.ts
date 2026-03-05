@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-const REST_URL = 'https://XXXXXXXX.execute-api.us-east-1.amazonaws.com/dev';
-const WS_URL = 'wss://YYYYYYYY.execute-api.us-east-1.amazonaws.com/dev';
+const REST_URL = 'https://afwwdtnwob.execute-api.us-east-1.amazonaws.com/dev';
+const WS_URL = 'wss://imhoyvukwe.execute-api.us-east-1.amazonaws.com/dev';
 
 let ws: any = null;
 
