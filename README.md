@@ -1,210 +1,273 @@
 # Veda Learn - AWS Edition
 
-> **AI-powered code education that teaches you why, not just fixes**
+AI-powered coding tutor that teaches you by detecting mistakes in real-time. Built with React, AWS Lambda, DynamoDB, and Claude AI.
 
-Veda Learn is a VS Code extension that acts as a passive AI mentor, watching your code and teaching you about mistakes, anti-patterns, and best practices in real-time. Unlike tools that just fix your code, Veda explains the underlying concepts through interactive lessons with voice narration, visual diagrams, and quizzes.
+## 🎯 Project Overview
 
-![Veda Learn Demo](https://via.placeholder.com/800x400?text=Veda+Learn+Demo)
+Veda Learn is a web-based IDE that:
+- Detects coding mistakes using Claude Haiku
+- Generates voice lessons with Amazon Polly
+- Creates adaptive quizzes to test understanding
+- Tracks your learning progress in DynamoDB
+- Integrates with GitHub repositories
 
-## 🎯 What Makes Veda Different
-
-- **Passive Learning**: Watches your code silently, only intervening when it detects a teachable moment
-- **Multi-Modal Education**: Combines text explanations, code diffs, Mermaid diagrams, and voice narration
-- **Real-Time Delivery**: Lessons pushed via WebSocket for immediate feedback
-- **Gamification**: Skill scores, streak tracking, and quiz validation
-- **Fully Serverless**: Built on AWS Lambda, scales automatically
-
-## 🏗️ Architecture
+## 📁 Project Structure
 
 ```
-VS Code Extension (TypeScript)
-         ↓
-API Gateway (REST + WebSocket)
-         ↓
-AWS Lambda Functions (Node.js 20.x)
-         ↓
-┌─────────────┬──────────────┬─────────────┬──────────────┐
-│  DynamoDB   │  OpenSearch  │    Polly    │  OpenRouter  │
-│  6 Tables   │  Serverless  │  Gen TTS    │     API      │
-└─────────────┴──────────────┴─────────────┴──────────────┘
+veda-learn/
+├── veda-learn-api/          # AWS Lambda backend (Serverless Framework)
+│   ├── handlers/            # Lambda function handlers
+│   ├── lib/                 # Shared libraries
+│   └── serverless.yml       # Serverless configuration
+├── veda-learn-web/          # React frontend (Vite)
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   ├── pages/           # Page components
+│   │   ├── store/           # Zustand state management
+│   │   └── lib/             # API client
+│   └── package.json
+├── external-policies/       # IAM policies for deployment
+└── references/              # Design references and roadmap
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- AWS Account with billing enabled
-- Node.js 20.x or higher
-- VS Code 1.80.0 or higher
-- OpenRouter API account ($10 credit recommended)
-- GitHub account for OAuth
+- Node.js 20+
+- AWS CLI configured
+- GitHub OAuth App created
+- OpenRouter API key
 
-### Installation
-
-1. **Clone the repository**
+### 1. Backend Setup (Lambda)
 
 ```bash
-git clone https://github.com/yourusername/veda-learn.git
-cd veda-learn
-```
-
-2. **Follow the complete setup guide**
-
-See [SETUP.md](./SETUP.md) for detailed step-by-step instructions covering:
-- AWS infrastructure setup (IAM, DynamoDB, S3, OpenSearch, Bedrock)
-- Lambda backend deployment
-- VS Code extension installation
-- Testing and troubleshooting
-
-3. **Quick setup summary**
-
-```bash
-# Set up AWS infrastructure (see SETUP.md for commands)
-# ...
-
-# Deploy Lambda backend
 cd veda-learn-api
+
+# Install dependencies
 npm install
+
+# Configure environment
 cp .env.example .env
 # Edit .env with your credentials
-npx serverless deploy
 
-# Install VS Code extension
-cd ../veda-learn-extension
-npm install
-npm run compile
-# Press F5 in VS Code to test
+# Deploy to AWS
+npx serverless deploy
 ```
 
-## 📚 Features
-
-### 🧠 Intelligent Code Analysis
-
-- Detects 5 categories: Anti-patterns, Bugs, Security, Performance, Style
-- Uses Claude Haiku 4.5 for fast classification (confidence threshold: 0.85)
-- 30-second debounce to avoid interrupting your flow
-
-### 📖 Interactive Lessons
-
-- **Three-panel layout**: Explanation, code diff, visual diagram
-- **Voice narration**: Amazon Polly Generative TTS (Ruth voice)
-- **RAG-enhanced**: Context from OpenSearch vector database
-- **Parallel generation**: 3 AI calls simultaneously for speed
-
-### 🎮 Gamification
-
-- **Skill Score**: 0-100 rating based on lessons completed
-- **Streak Tracking**: Consecutive days of learning
-- **Quiz Validation**: 2 MCQ questions after each lesson
-- **Confetti Animation**: Celebrate correct answers
-
-### 🔒 Security
-
-- GitHub OAuth 2.0 authentication
-- Stateless JWT tokens (30-day expiration)
-- Rate limiting: 20 requests/minute per user
-- HTTPS-only API Gateway
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **VS Code Extension API** (TypeScript)
-- **WebSocket Client** (ws library)
-- **Webview** for lesson rendering
-
-### Backend
-- **AWS Lambda** (Node.js 20.x)
-- **API Gateway** (REST + WebSocket)
-- **Serverless Framework** v3
-
-### Data Storage
-- **DynamoDB** (6 tables, pay-per-request)
-- **S3** (audio files, concept documents)
-- **OpenSearch Serverless** (vector embeddings)
-
-### AI Services
-- **OpenRouter API** (Claude Haiku, Sonnet, Opus; Gemini Flash)
-- **Google Gemini** (text-embedding-004 for vector embeddings - FREE tier)
-- **Amazon Polly** (Generative TTS)
-
-## 📊 Cost Estimate
-
-**4-Day Hackathon Budget:**
-- OpenSearch Serverless: ~$2-5
-- OpenRouter API: ~$5-8
-- Google Gemini Embeddings: FREE (1,500 req/day)
-- Lambda, DynamoDB, S3, Polly: Free tier
-- **Total: ~$7-13**
-
-## 🧪 Testing
+### 2. Frontend Setup (Web)
 
 ```bash
-# Run unit tests
-cd veda-learn-api
-npm test
+cd veda-learn-web
 
-# Run with coverage
-npm run test:coverage
+# Install dependencies
+npm install
 
-# Test extension
-cd veda-learn-extension
-npm test
+# Configure environment
+# Create .env file (see veda-learn-web/README.md)
+
+# Start development server
+npm run dev
 ```
 
-## 📖 Documentation
+Visit http://localhost:5173
 
-- **[SETUP.md](./SETUP.md)** - Complete setup guide
-- **[requirements.md](./.kiro/specs/veda-learn-aws-edition/requirements.md)** - Detailed requirements
-- **[design.md](./.kiro/specs/veda-learn-aws-edition/design.md)** - System design
-- **[tasks.md](./.kiro/specs/veda-learn-aws-edition/tasks.md)** - Implementation tasks
-- **[veda-learn-aws-roadmap.md](./references/veda-learn-aws-roadmap.md)** - 4-day build plan
-- **[veda-system-design.html](./references/veda-system-design.html)** - Interactive architecture diagram
+## 🔑 Environment Variables
 
-## 🎯 Roadmap
+### Backend (.env in veda-learn-api/)
 
-### ✅ Built (MVP)
-- [x] GitHub OAuth authentication
-- [x] Real-time code analysis
-- [x] Interactive lessons with TTS
-- [x] Quiz system
-- [x] Progress tracking
-- [x] WebSocket delivery
+```env
+JWT_SECRET=your-jwt-secret
+OPENROUTER_API_KEY=your-openrouter-key
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+WEB_APP_URL=http://localhost:5173
+```
 
-### 🚧 Coming Soon
-- [ ] Team/organization features
-- [ ] Custom concept definitions
-- [ ] Interview prep mode
-- [ ] Cognitive debt scoring
-- [ ] Multi-IDE support
+### Frontend (.env in veda-learn-web/)
+
+```env
+VITE_REST_URL=https://your-api-gateway-url/dev
+VITE_WS_URL=wss://your-websocket-url/dev
+VITE_GITHUB_CLIENT_ID=your-github-client-id
+VITE_APP_URL=http://localhost:5173
+VITE_DEMO_MODE=true
+```
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     VEDA LEARN SYSTEM                       │
+│                                                             │
+│  ┌──────────────┐         ┌──────────────────────────┐     │
+│  │  React Web   │────────▶│   AWS API Gateway        │     │
+│  │  (Vite)      │         │   REST + WebSocket       │     │
+│  └──────────────┘         └──────────────────────────┘     │
+│                                      │                      │
+│                    ┌─────────────────┼─────────────────┐   │
+│                    ▼                 ▼                 ▼    │
+│           ┌────────────┐    ┌────────────┐   ┌──────────┐ │
+│           │  Lambda    │    │  Lambda    │   │ Lambda   │ │
+│           │  Analyze   │    │  Lesson    │   │ Quiz     │ │
+│           └────────────┘    └────────────┘   └──────────┘ │
+│                    │                 │                 │    │
+│                    └─────────────────┼─────────────────┘   │
+│                                      ▼                      │
+│                    ┌──────────────────────────────┐        │
+│                    │      DynamoDB Tables         │        │
+│                    │  - Users                     │        │
+│                    │  - Lessons                   │        │
+│                    │  - Progress                  │        │
+│                    │  - Quizzes                   │        │
+│                    └──────────────────────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🎨 Features
+
+### For Learners
+
+- **Live Error Detection**: 30-second debounce, Claude Haiku analysis
+- **Voice Lessons**: Amazon Polly TTS with 3-panel interface
+- **Adaptive Quizzes**: MCQ questions with XP rewards
+- **Progress Tracking**: XP, streaks, concept mastery
+- **GitHub Integration**: Browse and load files from repos
+
+### For Developers
+
+- **Serverless Architecture**: AWS Lambda + API Gateway
+- **Real-time Updates**: WebSocket for lesson delivery
+- **State Management**: Zustand for global state
+- **Modern Stack**: React 19, Vite 7, Tailwind v4
+- **Type Safety**: JSDoc comments throughout
+
+## 📡 API Endpoints
+
+### REST API
+
+```
+POST   /api/analyze              # Analyze code for mistakes
+POST   /api/lesson               # Generate lesson
+POST   /api/lesson/deep          # Deep dive lesson
+POST   /api/quiz                 # Generate quiz
+GET    /api/progress/:userId     # Get user progress
+POST   /api/progress/update      # Update progress
+GET    /auth/github/callback     # GitHub OAuth callback
+```
+
+### WebSocket API
+
+```
+wss://your-websocket-url/dev?token=JWT
+
+Messages:
+- { type: 'lesson', lesson: {...} }
+- { type: 'error', message: '...' }
+```
+
+## 🗄️ Database Schema
+
+### DynamoDB Tables
+
+1. **veda-users**: User profiles and auth
+2. **veda-lessons**: Generated lessons
+3. **veda-progress**: Learning progress
+4. **veda-quizzes**: Quiz questions and answers
+5. **veda-mistakes**: Detected code mistakes
+6. **veda-rate-limits**: Rate limiting
+
+## 🚢 Deployment
+
+### Backend (AWS Lambda)
+
+```bash
+cd veda-learn-api
+npx serverless deploy --stage prod
+```
+
+### Frontend (Vercel)
+
+```bash
+cd veda-learn-web
+npm run build
+vercel --prod
+```
+
+## 🔐 Security
+
+- JWT authentication for all API calls
+- Rate limiting (30s cooldown between analyses)
+- GitHub OAuth for user authentication
+- CORS configured for web app domain
+- Environment variables for secrets
+
+## 📊 Monitoring
+
+- CloudWatch Logs for Lambda functions
+- API Gateway metrics
+- DynamoDB metrics
+- WebSocket connection tracking
+
+## 🐛 Troubleshooting
+
+### Lambda Deployment Issues
+
+```bash
+# Check IAM permissions
+aws iam get-role --role-name veda-lambda-role
+
+# View CloudWatch logs
+aws logs tail /aws/lambda/veda-learn-api-dev-analyze --follow
+```
+
+### Frontend Issues
+
+```bash
+# Check environment variables
+cat veda-learn-web/.env
+
+# Clear cache and rebuild
+rm -rf veda-learn-web/node_modules veda-learn-web/dist
+cd veda-learn-web && npm install && npm run build
+```
+
+## 📝 Development Workflow
+
+1. Make changes to Lambda handlers in `veda-learn-api/handlers/`
+2. Test locally or deploy to dev: `npx serverless deploy`
+3. Make changes to React components in `veda-learn-web/src/`
+4. Test in browser: `npm run dev`
+5. Deploy frontend: `vercel --prod`
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+This is a hackathon project. Contributions welcome!
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-## 📝 License
+## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT
 
 ## 🙏 Acknowledgments
 
-- **OpenRouter** for unified AI API access
+- **Claude AI** (Anthropic) for code analysis
+- **OpenRouter** for AI model access
 - **AWS** for serverless infrastructure
-- **Anthropic** for Claude models
-- **Google** for Gemini Flash
-- **VS Code** for extension platform
+- **Vercel** for frontend hosting
+- **GitHub** for OAuth and repository integration
 
-## 📧 Contact
+## 📧 Support
 
-- **GitHub Issues**: For bug reports and feature requests
-- **Email**: your-email@example.com
-- **Twitter**: @yourusername
+For issues and questions:
+- Check the browser console and network tab
+- Review CloudWatch logs for Lambda errors
+- Verify environment variables are set correctly
 
 ---
 
-**Built with ❤️ for developers who want to learn, not just code faster.**
+Built with ❤️ by Suvam Paul
