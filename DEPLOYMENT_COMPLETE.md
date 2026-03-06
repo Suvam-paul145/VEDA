@@ -126,6 +126,7 @@ OPENROUTER_API_KEY=<your-key>
 GITHUB_CLIENT_ID=Ov23liUfaTgayCi8bO5n
 GITHUB_CLIENT_SECRET=<your-secret>
 WEB_APP_URL=https://talk-with-veda.vercel.app
+WEB_APP_URL_LOCAL=http://localhost:5174
 ```
 
 ### Frontend (.env in veda-learn-web/)
@@ -253,15 +254,18 @@ None! All features are working as expected.
 
 ### For Production Deployment
 
-1. **Update GitHub OAuth App**
+1. **Update GitHub OAuth App (CRITICAL)**
    ```
    Homepage URL: https://talk-with-veda.vercel.app
-   Callback URL: https://talk-with-veda.vercel.app/auth/callback
+   
+   Callback URLs (ADD BOTH):
+   - https://talk-with-veda.vercel.app/auth/callback
+   - http://localhost:5174/auth/callback
    ```
 
 2. **Deploy Backend Updates**
    ```bash
-   DEPLOY_PRODUCTION.bat
+   DEPLOY_OAUTH_FIX.bat
    ```
 
 3. **Deploy Frontend to Vercel**
@@ -271,11 +275,9 @@ None! All features are working as expected.
    vercel --prod
    ```
 
-4. **Test Production**
-   - Verify OAuth flow
-   - Test code analysis
-   - Check WebSocket connection
-   - Validate all features
+4. **Test Both Environments**
+   - Local: http://localhost:5174 → GitHub OAuth → http://localhost:5174/auth/callback
+   - Production: https://talk-with-veda.vercel.app → GitHub OAuth → https://talk-with-veda.vercel.app/auth/callback
 
 ### Optional Enhancements
 

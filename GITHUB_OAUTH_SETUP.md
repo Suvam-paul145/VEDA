@@ -1,96 +1,77 @@
-# GitHub OAuth App Configuration for Production
+# GitHub OAuth App Configuration
 
 ## Current Configuration
 - **Client ID**: `Ov23liUfaTgayCi8bO5n`
 - **Production URL**: `https://talk-with-veda.vercel.app`
+- **Local Development URL**: `http://localhost:5174`
 
-## Required Updates
+## Required GitHub OAuth App Settings
 
-### 1. Update GitHub OAuth App Settings
+Go to [GitHub Developer Settings](https://github.com/settings/developers) and update your OAuth app with **BOTH** callback URLs:
 
-Go to [GitHub Developer Settings](https://github.com/settings/developers) and update your OAuth app:
-
-**Homepage URL:**
+### Homepage URL:
 ```
 https://talk-with-veda.vercel.app
 ```
 
-**Authorization callback URL:**
+### Authorization callback URLs (ADD BOTH):
 ```
 https://talk-with-veda.vercel.app/auth/callback
+http://localhost:5174/auth/callback
 ```
 
-### 2. Environment Variables Status
+**IMPORTANT**: You must add BOTH callback URLs to your GitHub OAuth app. GitHub allows multiple callback URLs, and our backend will automatically detect which one to use based on the request origin.
 
-✅ **Frontend (.env)** - Updated
-- `VITE_APP_URL=https://talk-with-veda.vercel.app`
-- `VITE_DEMO_MODE=false`
+## How It Works
 
-✅ **Backend (.env)** - Updated
-- `WEB_APP_URL=https://talk-with-veda.vercel.app`
-- `VEDA_DEMO_MODE=false`
+The backend auth handler (`handlers/auth.js`) now intelligently detects the request origin:
 
-✅ **Serverless Config** - Updated
-- Added `WEB_APP_URL` environment variable
+- **Local Development**: If the request comes from `localhost`, it redirects to `http://localhost:5174/auth/callback`
+- **Production**: If the request comes from production, it redirects to `https://talk-with-veda.vercel.app/auth/callback`
 
-✅ **Auth Handler** - Updated
-- Now redirects to `${WEB_APP_URL}/auth/callback?token=${token}`
+## Environment Variables Updated
 
-### 3. Deployment Commands
-
-Run the production deployment script:
-```bash
-DEPLOY_PRODUCTION.bat
+### Backend (.env)
+```env
+WEB_APP_URL=https://talk-with-veda.vercel.app
+WEB_APP_URL_LOCAL=http://localhost:5174
 ```
 
-Or manually:
+### Frontend (.env) - No changes needed
+```env
+VITE_APP_URL=https://talk-with-veda.vercel.app
+```
+
+## Testing Both Environments
+
+### Local Development Testing:
+1. Start local server: `cd veda-learn-web && npm run dev`
+2. Visit: `http://localhost:5174`
+3. Click "Sign in with GitHub"
+4. Should redirect back to: `http://localhost:5174/auth/callback?token=...`
+
+### Production Testing:
+1. Deploy to Vercel: `https://talk-with-veda.vercel.app`
+2. Visit the production URL
+3. Click "Sign in with GitHub"  
+4. Should redirect back to: `https://talk-with-veda.vercel.app/auth/callback?token=...`
+
+## Deployment Commands
+
+Deploy the updated backend:
 ```bash
-# Deploy backend
 cd veda-learn-api
-npm install
 npx serverless deploy
-
-# Build frontend
-cd ../veda-learn-web
-npm install
-npm run build
 ```
 
-### 4. OAuth Flow Testing
+## Troubleshooting
 
-After deployment, test the OAuth flow:
-
-1. Visit: `https://talk-with-veda.vercel.app`
-2. Click "Sign in with GitHub"
-3. Authorize the app
-4. Should redirect to: `https://talk-with-veda.vercel.app/auth/callback?token=...`
-5. Frontend should handle the token and log you in
-
-### 5. Troubleshooting
+**If you still see "Be careful!" warning:**
+1. Double-check that BOTH callback URLs are added to your GitHub OAuth app
+2. Make sure there are no typos in the URLs
+3. Ensure the GitHub OAuth app is using the correct Client ID: `Ov23liUfaTgayCi8bO5n`
 
 **If OAuth redirect fails:**
-- Verify GitHub app callback URL matches exactly
-- Check browser network tab for redirect responses
-- Verify backend logs in AWS CloudWatch
-
-**If CORS errors occur:**
-- Ensure `WEB_APP_URL` is set correctly in backend
-- Check API Gateway CORS configuration
-- Verify frontend is making requests to correct API endpoints
-
-## API Endpoints
-
-**REST API:**
-```
-https://afwwdtnwob.execute-api.us-east-1.amazonaws.com/dev
-```
-
-**WebSocket API:**
-```
-wss://imhoyvukwe.execute-api.us-east-1.amazonaws.com/dev
-```
-
-**GitHub OAuth Callback:**
-```
-https://afwwdtnwob.execute-api.us-east-1.amazonaws.com/dev/auth/github/callback
-```
+- Check browser network tab for the actual redirect URL
+- Verify the backend logs in AWS CloudWatch
+- Ensure both environment variables are set correctly
