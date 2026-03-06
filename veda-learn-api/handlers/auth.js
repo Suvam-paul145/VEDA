@@ -55,10 +55,11 @@ module.exports.callback = async (event) => {
             { expiresIn: '30d' }
         );
 
-        // Redirect to VS Code via custom URI handler
+        // Redirect to production web app with token
+        const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:5174';
         return {
             statusCode: 302,
-            headers: { Location: `vscode://veda-learn.veda-learn/auth?token=${token}` }
+            headers: { Location: `${webAppUrl}/auth/callback?token=${token}` }
         };
 
     } catch (err) {

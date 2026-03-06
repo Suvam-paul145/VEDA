@@ -31,7 +31,7 @@ All components have been successfully deployed and configured.
 - [x] Development server running
 
 **Local Dev**: http://localhost:5174 (currently running)
-**Production**: Ready for Vercel deployment
+**Production**: https://talk-with-veda.vercel.app (configured)
 
 ### ✅ Cleanup
 - [x] Removed unnecessary directories:
@@ -125,7 +125,7 @@ JWT_SECRET=07f1eb1b643aca5269ef9a5217823cb84ad5a9d7d2acd3448a76d4335a44df8f
 OPENROUTER_API_KEY=<your-key>
 GITHUB_CLIENT_ID=Ov23liUfaTgayCi8bO5n
 GITHUB_CLIENT_SECRET=<your-secret>
-WEB_APP_URL=http://localhost:5173
+WEB_APP_URL=https://talk-with-veda.vercel.app
 ```
 
 ### Frontend (.env in veda-learn-web/)
@@ -133,8 +133,8 @@ WEB_APP_URL=http://localhost:5173
 VITE_REST_URL=https://afwwdtnwob.execute-api.us-east-1.amazonaws.com/dev
 VITE_WS_URL=wss://imhoyvukwe.execute-api.us-east-1.amazonaws.com/dev
 VITE_GITHUB_CLIENT_ID=Ov23liUfaTgayCi8bO5n
-VITE_APP_URL=http://localhost:5173
-VITE_DEMO_MODE=true
+VITE_APP_URL=https://talk-with-veda.vercel.app
+VITE_DEMO_MODE=false
 ```
 
 ## 🎯 Features Implemented
@@ -255,19 +255,21 @@ None! All features are working as expected.
 
 1. **Update GitHub OAuth App**
    ```
-   Homepage URL: https://veda-learn.vercel.app
-   Callback URL: https://veda-learn.vercel.app/auth/callback
+   Homepage URL: https://talk-with-veda.vercel.app
+   Callback URL: https://talk-with-veda.vercel.app/auth/callback
    ```
 
-2. **Deploy Frontend to Vercel**
+2. **Deploy Backend Updates**
+   ```bash
+   DEPLOY_PRODUCTION.bat
+   ```
+
+3. **Deploy Frontend to Vercel**
    ```bash
    cd veda-learn-web
+   npm run build
    vercel --prod
    ```
-
-3. **Update Environment Variables**
-   - Set production URLs in Vercel
-   - Update `VITE_DEMO_MODE=false`
 
 4. **Test Production**
    - Verify OAuth flow

@@ -36,6 +36,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1001.0",
     "@google/generative-ai": "^0.24.1",
     "@opensearch-project/opensearch": "^2.13.0",
+    "@pinecone-database/pinecone": "^7.1.0",
     "aws4": "^1.13.2",
     "axios": "^1.6.0",
     "jsonwebtoken": "^9.0.3",

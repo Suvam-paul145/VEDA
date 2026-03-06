@@ -19,6 +19,9 @@ provider:
     S3_AUDIO_BUCKET: ${env:S3_AUDIO_BUCKET}
     S3_CONCEPTS_BUCKET: ${env:S3_CONCEPTS_BUCKET}
     WS_API_ENDPOINT: ${env:WS_API_ENDPOINT}
+    WEB_APP_URL: ${env:WEB_APP_URL}
+    PINECONE_API_KEY: ${env:PINECONE_API_KEY}
+    PINECONE_INDEX: ${env:PINECONE_INDEX}
 
 functions:
   authCallback:
