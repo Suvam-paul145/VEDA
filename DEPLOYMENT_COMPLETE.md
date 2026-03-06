@@ -337,4 +337,4 @@ The application is fully functional and ready for presentation.
 
 ---
 
-Built with ❤️ for the AWS + Anthropic Hackathon
+Built with ❤️ by Suvam Paul
