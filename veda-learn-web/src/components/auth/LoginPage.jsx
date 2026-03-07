@@ -1,7 +1,7 @@
 export default function LoginPage() {
   const CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID
-  const API_URL = import.meta.env.VITE_REST_URL
-  const CALLBACK = `${API_URL}/auth/github/callback`
+  const APP_URL = import.meta.env.VITE_APP_URL
+  const CALLBACK = `${APP_URL}/auth/callback`
   const OAUTH_URL = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(CALLBACK)}&scope=user:email,repo`
 
   return (

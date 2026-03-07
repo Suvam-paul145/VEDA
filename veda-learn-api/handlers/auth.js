@@ -55,7 +55,21 @@ module.exports.callback = async (event) => {
             { expiresIn: '30d' }
         );
 
-        // Redirect to local development server
+        // Check if called from web app (frontend code exchange)
+        const source = (event.queryStringParameters || {}).source;
+        if (source === 'web') {
+            return {
+                statusCode: 200,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                },
+                body: JSON.stringify({ token }),
+            };
+        }
+
+        // Default: redirect (for VS Code extension or other clients)
         const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:5173';
         return {
             statusCode: 302,
