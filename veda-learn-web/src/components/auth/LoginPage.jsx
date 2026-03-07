@@ -1,14 +1,14 @@
 export default function LoginPage() {
-  const CLIENT_ID  = import.meta.env.VITE_GITHUB_CLIENT_ID
-  const APP_URL    = import.meta.env.VITE_APP_URL
-  const CALLBACK   = `${APP_URL}/auth/callback`
-  const OAUTH_URL  = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${CALLBACK}&scope=user:email,repo`
+  const CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID
+  const API_URL = import.meta.env.VITE_REST_URL
+  const CALLBACK = `${API_URL}/auth/github/callback`
+  const OAUTH_URL = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(CALLBACK)}&scope=user:email,repo`
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
       background: '#07090f'
     }}>
@@ -33,7 +33,7 @@ export default function LoginPage() {
         }}>
           🧠
         </div>
-        
+
         <h1 style={{
           fontSize: '32px',
           fontWeight: '800',
@@ -42,7 +42,7 @@ export default function LoginPage() {
         }}>
           Veda Learn
         </h1>
-        
+
         <p style={{
           fontSize: '16px',
           color: '#94a3b8',
@@ -50,7 +50,7 @@ export default function LoginPage() {
         }}>
           AI-powered coding tutor in your browser
         </p>
-        
+
         <button
           onClick={() => window.location.href = OAUTH_URL}
           style={{
@@ -77,7 +77,7 @@ export default function LoginPage() {
         >
           Sign in with GitHub →
         </button>
-        
+
         <p style={{
           fontSize: '12px',
           color: '#64748b',

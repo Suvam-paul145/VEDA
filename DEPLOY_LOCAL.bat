@@ -42,4 +42,10 @@ echo TO START DEVELOPMENT:
 echo cd veda-learn-web
 echo npm run dev
 echo.
+echo FIXES APPLIED:
+echo - Fixed JWT payload decoding in AuthCallback
+echo - Fixed IDEPage to check for existing authentication
+echo - Updated LoginPage to use real GitHub OAuth
+echo - Backend redirects to localhost:5173
+echo.
 pause

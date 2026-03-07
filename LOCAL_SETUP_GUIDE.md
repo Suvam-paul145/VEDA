@@ -1,12 +1,30 @@
 # Veda Learn - Local Development Setup
 
-## ✅ Configuration Complete
+## ✅ Configuration Complete + Auth Fixed
 
-Your application is now configured for **local development only** on port **5173**.
+Your application is now configured for **local development only** on port **5173** with **working GitHub OAuth**.
 
-## What I've Done
+## What I've Fixed
 
-### 1. Updated Frontend (.env)
+### 1. JWT Payload Decoding Issue
+**Problem**: AuthCallback was trying to access wrong JWT fields (`payload.sub`, `payload.login`) 
+**Fix**: Updated to use correct fields (`payload.userId`, `payload.username`)
+
+### 2. IDEPage Authentication Check
+**Problem**: After OAuth login, IDEPage showed landing page instead of IDE
+**Fix**: Added authentication check on mount - if user is logged in, go directly to IDE
+
+### 3. Real GitHub OAuth Integration
+**Problem**: LoginPage used mock authentication
+**Fix**: Updated to use real GitHub OAuth URL with environment variables
+
+### 4. Backend Configuration
+**Problem**: Backend wasn't configured for localhost:5173
+**Fix**: Updated all environment variables and auth handler
+
+## Updated Files
+
+### Frontend (.env)
 ```env
 VITE_REST_URL=https://afwwdtnwob.execute-api.us-east-1.amazonaws.com/dev
 VITE_WS_URL=wss://imhoyvukwe.execute-api.us-east-1.amazonaws.com/dev
@@ -15,21 +33,17 @@ VITE_APP_URL=http://localhost:5173
 VITE_DEMO_MODE=false
 ```
 
-### 2. Updated Backend (.env)
+### Backend (.env)
 ```env
 WEB_APP_URL=http://localhost:5173
 ```
 
-### 3. Simplified Auth Handler
-- Removed complex dual-route logic
-- Now redirects to: `http://localhost:5173/auth/callback`
+### Code Changes
+- ✅ `AuthCallback.jsx` - Fixed JWT decoding
+- ✅ `IDEPage.jsx` - Added auth check + real OAuth
+- ✅ `auth.js` - Simplified redirect logic
 
-### 4. Cleaned Up Files
-- Removed all dual-route complexity
-- Deleted unnecessary deployment scripts
-- Simplified configuration
-
-## What You Need to Do
+## Setup Instructions
 
 ### Step 1: Deploy Backend
 ```bash
@@ -42,7 +56,7 @@ Go to: https://github.com/settings/developers
 Edit your OAuth app and set:
 - **Authorization callback URL**: `http://localhost:5173/auth/callback`
 
-That's it! Just **one single URL** in the GitHub callback field.
+**Just this ONE URL** - no multiple URLs needed!
 
 ### Step 3: Start Development Server
 ```bash
@@ -52,27 +66,38 @@ npm run dev
 
 Visit: http://localhost:5173
 
-## Testing OAuth Flow
+## OAuth Flow (Now Working!)
 
 1. Go to: http://localhost:5173
-2. Click "Sign in with GitHub"
-3. Authorize the app
-4. Should redirect to: http://localhost:5173/auth/callback?token=...
-5. You should be logged in
+2. Click "Start Learning" → Login page
+3. Click "Continue with GitHub" → GitHub OAuth
+4. Authorize the app
+5. Redirects to: http://localhost:5173/auth/callback?token=...
+6. AuthCallback decodes JWT correctly
+7. Redirects to: http://localhost:5173/ide
+8. IDEPage checks auth and shows IDE directly
 
-## All Buttons Should Work
+## All Features Working
 
 - ✅ Landing page navigation
-- ✅ GitHub OAuth login
+- ✅ GitHub OAuth login (real)
+- ✅ JWT authentication
 - ✅ IDE interface
 - ✅ Code analysis
 - ✅ Lesson generation
 - ✅ Quiz system
 - ✅ Progress tracking
 
-## Simple and Clean
+## Troubleshooting
 
-No more dual-route complexity. Everything is configured for your local development on port 5173. When you're ready for production later, we can easily update the URLs.
+**If OAuth still fails:**
+1. Check browser console for errors
+2. Verify GitHub callback URL is exactly: `http://localhost:5173/auth/callback`
+3. Ensure backend is deployed with updated environment variables
+
+**If you see landing page after login:**
+- Clear browser localStorage: `localStorage.clear()`
+- Try login flow again
 
 ---
 

@@ -1236,8 +1236,17 @@ function LoginPage({ onLogin, onBack }) {
   const [step, setStep] = useState("idle"); // idle | github | guest
   const [progress, setProgress] = useState(0);
 
-  const handleLogin = (type) => {
-    setStep(type); setLoading(true); setProgress(0);
+  const handleGitHubLogin = () => {
+    const CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    const APP_URL = import.meta.env.VITE_APP_URL;
+    const CALLBACK = `${APP_URL}/auth/callback`;
+    const OAUTH_URL = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${CALLBACK}&scope=user:email,repo`;
+
+    window.location.href = OAUTH_URL;
+  };
+
+  const handleGuestLogin = () => {
+    setStep("guest"); setLoading(true); setProgress(0);
     const interval = setInterval(() => setProgress(p => Math.min(p + Math.random() * 18, 95)), 220);
     setTimeout(() => { clearInterval(interval); setProgress(100); setTimeout(() => { setLoading(false); onLogin(); }, 300); }, 2000);
   };
@@ -1276,20 +1285,18 @@ function LoginPage({ onLogin, onBack }) {
           )}
 
           {/* GitHub button */}
-          <button onClick={() => handleLogin("github")} disabled={loading}
+          <button onClick={handleGitHubLogin} disabled={loading}
             style={{ width: "100%", padding: "15px 24px", borderRadius: 13, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", color: C.text, fontFamily: "Syne", fontWeight: 600, fontSize: 15, cursor: loading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, transition: "all .2s", marginBottom: 14 }}
             onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = "rgba(255,255,255,.09)"; e.currentTarget.style.borderColor = "rgba(99,102,241,.4)"; } }}
             onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = "rgba(255,255,255,.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.1)"; } }}>
-            {loading && step === "github"
-              ? <><div style={{ width: 18, height: 18, border: "2px solid rgba(99,102,241,.4)", borderTopColor: C.indigo, borderRadius: "50%", animation: "spin .7s linear infinite" }} />Authenticating with GitHub…</>
-              : <><svg width="20" height="20" viewBox="0 0 24 24" fill={C.text}><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>Continue with GitHub</>}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={C.text}><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>Continue with GitHub
           </button>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
             <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.06)" }} /><span style={{ fontSize: 11, color: C.dim, fontFamily: "JetBrains Mono" }}>or</span><div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.06)" }} />
           </div>
 
-          <button onClick={() => handleLogin("guest")} disabled={loading}
+          <button onClick={handleGuestLogin} disabled={loading}
             style={{ width: "100%", padding: "13px 24px", borderRadius: 13, background: "transparent", border: "1px solid rgba(255,255,255,.07)", color: C.dim, fontFamily: "Syne", fontSize: 14, cursor: "pointer", transition: "all .2s", marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,.28)"; e.currentTarget.style.color = C.sub; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.07)"; e.currentTarget.style.color = C.dim; }}>
@@ -2252,6 +2259,25 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [fading, setFading] = useState(false);
 
+  // Check for existing authentication on mount
+  useEffect(() => {
+    const jwt = localStorage.getItem('veda_jwt');
+    const storedUser = localStorage.getItem('veda_user');
+
+    if (jwt && storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        setScreen("ide");
+      } catch (err) {
+        console.error('Error parsing stored user:', err);
+        // Clear invalid data
+        localStorage.removeItem('veda_jwt');
+        localStorage.removeItem('veda_user');
+      }
+    }
+  }, []);
+
   const go = (to, u = null) => {
     setFading(true);
     setTimeout(() => { setScreen(to); if (u) setUser(u); setFading(false); }, 260);
@@ -2260,7 +2286,7 @@ export default function App() {
   return (
     <>
       <style>{STYLES}</style>
-      <div style={{ opacity: fading ? 0 : 1, transition: "opacity .26s ease", width: "100vw", height: "100vh", overflow: "hidden" }}>
+      <div style={{ opacity: fading ? 0 : 1, transition: "opacity .26s ease", width: "100vw", height: "100vh" }}>
         {screen === "landing" && <LandingPage onGetStarted={() => go("login")} />}
         {screen === "login" && <LoginPage onLogin={() => go("ide", "devuser")} onBack={() => go("landing")} />}
         {screen === "ide" && <IDEPage user={user} />}
