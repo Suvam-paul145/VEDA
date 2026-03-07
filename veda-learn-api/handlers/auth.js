@@ -55,18 +55,8 @@ module.exports.callback = async (event) => {
             { expiresIn: '30d' }
         );
 
-        // Determine redirect URL based on request origin or query parameter
-        let webAppUrl = process.env.WEB_APP_URL || 'https://talk-with-veda.vercel.app';
-        
-        // Check if request is for local development
-        const origin = event.headers?.origin || event.headers?.Origin;
-        const referer = event.headers?.referer || event.headers?.Referer;
-        const isLocalRequest = origin?.includes('localhost') || referer?.includes('localhost');
-        
-        if (isLocalRequest) {
-            webAppUrl = process.env.WEB_APP_URL_LOCAL || 'http://localhost:5174';
-        }
-
+        // Redirect to local development server
+        const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:5173';
         return {
             statusCode: 302,
             headers: { Location: `${webAppUrl}/auth/callback?token=${token}` }
