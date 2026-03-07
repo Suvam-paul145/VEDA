@@ -30,8 +30,29 @@ const useVedaStore = create(subscribeWithSelector((set, get) => ({
   activeFile: 'cart.py',
   openFiles: {},
   updateFileContent: (fileName, content) =>
-    set(s => ({ openFiles: { ...s.openFiles, [fileName]: { ...s.openFiles[fileName], content } } })),
+    set(s => {
+      // If we're tracking a github repo, also save standard edit to gitChanges
+      if (s.activeRepo) {
+        return {
+          openFiles: { ...s.openFiles, [fileName]: { ...s.openFiles[fileName], content } },
+          gitChanges: { ...s.gitChanges, [fileName]: content }
+        };
+      }
+      return { openFiles: { ...s.openFiles, [fileName]: { ...s.openFiles[fileName], content } } };
+    }),
   setActiveFile: (name) => set({ activeFile: name }),
+
+  // ─── GITHUB INTEGRATION ────────────────────────────────────────
+  githubToken: null,
+  githubUser: null,
+  repos: [],
+  activeRepo: null, // { owner, name, default_branch }
+  fileTree: [],     // github tree items
+  gitChanges: {},   // { path: newContent }
+  setGithubAuth: (token, user) => set({ githubToken: token, githubUser: user }),
+  setRepos: (repos) => set({ repos }),
+  setActiveRepo: (repo, tree) => set({ activeRepo: repo, fileTree: tree, gitChanges: {}, activeFile: null, openFiles: {} }),
+  clearGitChanges: () => set({ gitChanges: {} }),
 
   // ─── ANALYSIS ──────────────────────────────────────────────────
   analyzing: false,

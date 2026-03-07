@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
 import VedaEditor from "../components/editor/VedaEditor";
 import useVedaStore from "../store/useVedaStore";
+import FileTree from "../components/ide/FileTree";
+import GitHubPanel from "../components/ide/GitHubPanel";
+import SourceControl from "../components/ide/SourceControl";
 
 /* ═══════════════════════════════════════════════════════════════
    GLOBAL STYLES
@@ -830,151 +833,6 @@ function MenuDropdown({ label, items, onClose }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   GITHUB PANEL
-═══════════════════════════════════════════════════════════════ */
-function GitHubPanel({ onFileClick, addToast }) {
-  const [token, setToken] = useState("");
-  const [connected, setConnected] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [selRepo, setSelRepo] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const connect = () => {
-    if (!token.trim()) return;
-    setConnecting(true);
-    setTimeout(() => {
-      setConnecting(false);
-      setConnected(true);
-      addToast("GitHub connected", "devuser · 5 repos loaded", "success");
-    }, 1600);
-  };
-
-  const openRepo = (repo) => {
-    setSelRepo(s => s === repo ? null : repo);
-    setLoading(true);
-    setTimeout(() => setLoading(false), 800);
-  };
-
-  const openFile = (fname) => {
-    const mapped = Object.keys(DEMO_CODE).find(k => fname.includes(k.split(".")[0]));
-    if (mapped) { onFileClick(mapped); addToast("File opened", `${fname} loaded into editor`, "info"); }
-    else addToast("File opened", `${fname} loaded`, "info");
-  };
-
-  if (!connected) return (
-    <div style={{ padding: 14, fontFamily: "Syne" }}>
-      <div style={{ fontSize: 11, color: C.dim, fontFamily: "JetBrains Mono", marginBottom: 14, lineHeight: 1.6 }}>
-        Connect GitHub to browse repos and load files into the IDE.
-      </div>
-      <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 11, color: C.sub, marginBottom: 6, fontWeight: 600 }}>Personal Access Token</div>
-        <input
-          value={token} onChange={e => setToken(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && connect()}
-          placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-          type="password"
-          style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 10px", fontSize: 11, color: C.text, fontFamily: "JetBrains Mono", outline: "none", transition: "border-color .2s", marginBottom: 8 }}
-          onFocus={e => e.target.style.borderColor = "rgba(99,102,241,.45)"}
-          onBlur={e => e.target.style.borderColor = C.border}
-        />
-        <div style={{ fontSize: 10, color: C.muted, fontFamily: "JetBrains Mono", marginBottom: 10 }}>
-          Needs <code style={{ color: C.sub }}>repo</code> (read-only) scope
-        </div>
-        <button onClick={connect} disabled={!token.trim() || connecting}
-          style={{ width: "100%", padding: "9px 0", borderRadius: 9, background: token.trim() ? `linear-gradient(135deg,${C.indigo},${C.violet})` : C.surface, border: `1px solid ${token.trim() ? "transparent" : C.border}`, color: "white", fontFamily: "Syne", fontWeight: 700, fontSize: 12, cursor: token.trim() ? "pointer" : "default", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
-          {connecting
-            ? <><div style={{ width: 12, height: 12, border: "1.5px solid rgba(255,255,255,.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin .7s linear infinite" }} />Connecting…</>
-            : <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
-              Connect GitHub
-            </>}
-        </button>
-      </div>
-      {/* Demo shortcut */}
-      <div
-        onClick={() => { setConnected(true); addToast("Demo mode", "5 mock repos loaded", "info"); }}
-        style={{ textAlign: "center", fontSize: 11, color: C.dim, cursor: "pointer", padding: "8px 0", transition: "color .2s" }}
-        onMouseEnter={e => e.target.style.color = C.sub}
-        onMouseLeave={e => e.target.style.color = C.dim}>
-        Skip → use demo repos
-      </div>
-    </div>
-  );
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: "Syne" }}>
-      {/* User badge */}
-      <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ width: 26, height: 26, borderRadius: "50%", background: `linear-gradient(135deg,${C.indigo},${C.violet})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "white" }}>D</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, color: C.text, fontWeight: 600 }}>devuser</div>
-          <div style={{ fontSize: 10, color: C.dim, fontFamily: "JetBrains Mono" }}>{GH_REPOS.length} repos · read-only</div>
-        </div>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.green, boxShadow: `0 0 6px ${C.green}` }} />
-      </div>
-
-      {/* Repo list */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        {GH_REPOS.map(repo => (
-          <div key={repo.name}>
-            <div className="gh-repo"
-              onClick={() => openRepo(repo.name)}
-              style={{ padding: "9px 12px", borderBottom: `1px solid ${C.border}`, background: selRepo === repo.name ? "rgba(99,102,241,.08)" : "transparent" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                {repo.private
-                  ? <span style={{ fontSize: 9, color: C.amber, background: "rgba(251,191,36,.12)", border: "1px solid rgba(251,191,36,.25)", padding: "1px 5px", borderRadius: 4, fontFamily: "JetBrains Mono" }}>private</span>
-                  : <span style={{ fontSize: 9, color: C.green, background: "rgba(16,185,129,.1)", border: "1px solid rgba(16,185,129,.2)", padding: "1px 5px", borderRadius: 4, fontFamily: "JetBrains Mono" }}>public</span>}
-                <span style={{ flex: 1, fontSize: 12, color: selRepo === repo.name ? C.indigo : C.text, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {repo.name}
-                </span>
-                <span style={{ fontSize: 9, color: C.dim, fontFamily: "JetBrains Mono" }}>⭐ {repo.stars}</span>
-              </div>
-              <div style={{ fontSize: 10, color: C.dim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{repo.desc}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: LANG_COLORS[repo.lang] || LANG_COLORS.default, flexShrink: 0 }} />
-                <span style={{ fontSize: 10, color: C.dim, fontFamily: "JetBrains Mono" }}>{repo.lang}</span>
-                <span style={{ marginLeft: "auto", fontSize: 9, color: C.muted, fontFamily: "JetBrains Mono" }}>{repo.updated}</span>
-              </div>
-            </div>
-
-            {/* File list inside repo */}
-            {selRepo === repo.name && (
-              <div style={{ background: "rgba(0,0,0,.25)", borderBottom: `1px solid ${C.border}` }}>
-                {loading
-                  ? <div style={{ padding: "12px 18px", fontSize: 11, color: C.dim, fontFamily: "JetBrains Mono", display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ width: 10, height: 10, border: `1.5px solid rgba(99,102,241,.3)`, borderTopColor: C.indigo, borderRadius: "50%", animation: "spin .7s linear infinite" }} />
-                    Loading files…
-                  </div>
-                  : (GH_REPO_FILES[repo.name] || []).map((f, i) => (
-                    <div key={i} className="gh-file"
-                      onClick={() => !f.endsWith("/") && openFile(f)}
-                      style={{ padding: "5px 12px 5px 26px", display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: f.endsWith("/") ? C.orange : C.sub, fontFamily: "JetBrains Mono", cursor: f.endsWith("/") ? "default" : "pointer" }}>
-                      <span style={{ fontSize: 12 }}>{f.endsWith("/") ? "📁" : "📄"}</span>
-                      <span>{f}</span>
-                    </div>
-                  ))
-                }
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Footer */}
-      <div style={{ padding: "8px 12px", borderTop: `1px solid ${C.border}` }}>
-        <button
-          onClick={() => { setConnected(false); setSelRepo(null); setToken(""); }}
-          style={{ width: "100%", padding: "6px 0", borderRadius: 7, background: "transparent", border: `1px solid ${C.border}`, color: C.dim, fontFamily: "Syne", fontSize: 11, cursor: "pointer", transition: "all .2s" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(239,68,68,.3)"; e.currentTarget.style.color = C.red; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.dim; }}>
-          Disconnect GitHub
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
    NOTIFICATIONS DROPDOWN
 ═══════════════════════════════════════════════════════════════ */
 function NotificationsDropdown({ notifs, onMarkRead, onMarkAllRead, onClear, onClose }) {
@@ -1695,29 +1553,7 @@ function ProgressPanel({ xp, streak }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   FILE TREE
-═══════════════════════════════════════════════════════════════ */
-function FileTree({ activeFile, onFileClick }) {
-  const [open, setOpen] = useState(new Set(["veda-learn/", "src/", "handlers/"]));
-  const ICONS = { python: "🐍", typescript: "💙", javascript: "🟡", json: "📋", folder: "📁" };
-  const toggleFolder = (name) => setOpen(s => { const n = new Set(s); n.has(name) ? n.delete(name) : n.add(name); return n; });
-
-  return (
-    <div style={{ padding: "6px 0", fontFamily: "JetBrains Mono", fontSize: 11.5 }}>
-      {FILES.map((f, i) => (
-        <div key={i} className="file-row"
-          style={{ padding: `4px ${6 + f.depth * 14}px`, display: "flex", alignItems: "center", gap: 6, borderRadius: 6, margin: "1px 6px", background: activeFile === f.name && f.type === "file" ? "rgba(99,102,241,.13)" : "transparent", color: activeFile === f.name && f.type === "file" ? C.text : C.sub }}
-          onClick={() => f.type === "folder" ? toggleFolder(f.name) : onFileClick(f.name)}>
-          {f.type === "folder"
-            ? <><span style={{ fontSize: 9, color: C.dim, marginRight: 1, minWidth: 8 }}>{open.has(f.name) ? "▾" : "▸"}</span><span style={{ color: C.orange }}>{ICONS.folder}</span><span style={{ marginLeft: 2 }}>{f.name}</span></>
-            : <><span style={{ marginLeft: 4 }}>{ICONS[f.lang] || "📄"}</span><span>{f.name}</span></>
-          }
-        </div>
-      ))}
-    </div>
-  );
-}
+// (Old SearchPanel logic here - keeping it so we don't break Search for now)
 
 /* ═══════════════════════════════════════════════════════════════
    SEARCH PANEL
@@ -2076,24 +1912,11 @@ function IDEPage({ user }) {
               </span>
               <span onClick={() => setSidebarTab(null)} style={{ color: C.muted, cursor: "pointer", fontSize: 14, lineHeight: 1 }} onMouseEnter={e => e.target.style.color = C.dim} onMouseLeave={e => e.target.style.color = C.muted}>×</span>
             </div>
-            <div style={{ flex: 1, overflowY: "auto" }}>
-              {sidebarTab === "explorer" && <FileTree activeFile={activeFile} onFileClick={openFile} />}
+            <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column" }}>
+              {sidebarTab === "explorer" && <FileTree addToast={addToast} />}
               {sidebarTab === "search" && <SearchPanel onFileClick={openFile} />}
-              {sidebarTab === "git" && (
-                <div style={{ padding: 12, fontFamily: "Syne" }}>
-                  <div style={{ fontSize: 11, color: C.dim, fontFamily: "JetBrains Mono", marginBottom: 10 }}>Changes (2)</div>
-                  {["cart.py", "api.ts"].map(f => (
-                    <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 7, marginBottom: 4, cursor: "pointer", transition: "background .15s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.04)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                      <span style={{ width: 16, height: 16, borderRadius: 4, background: "rgba(251,191,36,.14)", border: "1px solid rgba(251,191,36,.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: C.amber }}>M</span>
-                      <span style={{ fontSize: 12, color: C.sub, fontFamily: "JetBrains Mono" }}>{f}</span>
-                    </div>
-                  ))}
-                  <button style={{ width: "100%", marginTop: 12, padding: "8px 0", borderRadius: 9, background: `linear-gradient(135deg,${C.indigo},${C.violet})`, border: "none", color: "white", fontFamily: "Syne", fontWeight: 600, fontSize: 12, cursor: "pointer" }} onClick={() => addToast("Committed", "Changes staged and committed", "success")}>
-                    ✓ Commit
-                  </button>
-                </div>
-              )}
-              {sidebarTab === "github" && <GitHubPanel onFileClick={openFile} addToast={addToast} />}
+              {sidebarTab === "git" && <SourceControl addToast={addToast} />}
+              {sidebarTab === "github" && <GitHubPanel addToast={addToast} onConnected={() => { }} />}
               {sidebarTab === "veda" && (
                 <div style={{ padding: 12, fontFamily: "Syne" }}>
                   <div style={{ fontSize: 10, color: C.dim, fontFamily: "JetBrains Mono", letterSpacing: ".07em", textTransform: "uppercase", marginBottom: 10 }}>Detected Issues</div>
@@ -2143,16 +1966,19 @@ function IDEPage({ user }) {
             <VedaEditor
               style={{ flex: 1 }}
               activeFile={activeFile}
-              code={DEMO_CODE[activeFile] || "// Select a file from the explorer"}
+              code={useVedaStore(s => s.openFiles[activeFile]?.content) || DEMO_CODE[activeFile] || "// Select a file from the explorer"}
               language={LANG_MAP[activeFile] || 'plaintext'}
               onCodeChange={(newVal) => {
-                // For now, DEMO_CODE is hardcoded, so we just let Monaco manage its own internal visual state
-                // until we wire up full openFiles state management from store.
+                // If it's a real active file, store handles it in changes, otherwise it's just demo visual diff
+                const store = useVedaStore.getState();
+                if (store.activeRepo && store.openFiles[activeFile]) {
+                  store.updateFileContent(activeFile, newVal);
+                }
               }}
             />
 
-            {/* Optional existing Minimap - left untouched for now as roadmap just says replace editor region */}
-            <Minimap code={DEMO_CODE[activeFile]} activeFile={activeFile} />
+            {/* Minimap */}
+            <Minimap code={useVedaStore(s => s.openFiles[activeFile]?.content) || DEMO_CODE[activeFile]} activeFile={activeFile} />
           </div>
 
           {/* BOTTOM PANEL */}
