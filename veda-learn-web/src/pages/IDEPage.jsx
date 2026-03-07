@@ -9,11 +9,11 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: #07090f; overflow: hidden; height: 100%; }
+  html, body { background: #1e1e1e; overflow: hidden; height: 100%; }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #6366f130; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #6366f160; }
+  ::-webkit-scrollbar-thumb { background: #569cd640; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #569cd680; }
 
   @keyframes fadeUp    { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
   @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
@@ -23,7 +23,7 @@ const STYLES = `
   @keyframes scaleIn   { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
   @keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:.45} }
   @keyframes spin      { to{transform:rotate(360deg)} }
-  @keyframes breathe   { 0%,100%{box-shadow:0 0 20px rgba(99,102,241,.35)} 50%{box-shadow:0 0 44px rgba(99,102,241,.8)} }
+  @keyframes breathe   { 0%,100%{box-shadow:0 0 20px rgba(0,120,212,.35)} 50%{box-shadow:0 0 44px rgba(0,120,212,.8)} }
   @keyframes blink     { 0%,49%{opacity:1} 50%,100%{opacity:0} }
   @keyframes toastIn   { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
   @keyframes toastOut  { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(40px)} }
@@ -35,35 +35,35 @@ const STYLES = `
 
   .veda-btn {
     position:relative; overflow:hidden;
-    background:linear-gradient(135deg,#6366f1,#8b5cf6);
-    color:white; border:none; padding:13px 30px; border-radius:12px;
+    background:#0078d4;
+    color:white; border:none; padding:13px 30px; border-radius:6px;
     font-family:Syne; font-size:15px; font-weight:700; cursor:pointer;
-    box-shadow:0 4px 24px rgba(99,102,241,.45); transition:all .25s ease; letter-spacing:.01em;
+    box-shadow:0 2px 8px rgba(0,120,212,.35); transition:all .25s ease; letter-spacing:.01em;
   }
-  .veda-btn:hover { transform:translateY(-2px); box-shadow:0 8px 40px rgba(99,102,241,.65); }
-  .veda-btn::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,transparent,rgba(255,255,255,.15),transparent); transform:translateX(-100%); transition:transform .5s ease; }
+  .veda-btn:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,120,212,.5); background:#1a8ad4; }
+  .veda-btn::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,transparent,rgba(255,255,255,.1),transparent); transform:translateX(-100%); transition:transform .5s ease; }
   .veda-btn:hover::after { transform:translateX(100%); }
-  .ghost-btn { background:transparent; color:#94a3b8; cursor:pointer; border:1px solid rgba(255,255,255,.1); padding:13px 26px; border-radius:12px; font-family:Syne; font-size:14px; transition:all .2s ease; }
-  .ghost-btn:hover { border-color:rgba(99,102,241,.5); color:#e2e8f0; }
+  .ghost-btn { background:transparent; color:#b0b0b0; cursor:pointer; border:1px solid #3c3c3c; padding:13px 26px; border-radius:6px; font-family:Syne; font-size:14px; transition:all .2s ease; }
+  .ghost-btn:hover { border-color:#569cd6; color:#d4d4d4; }
   .ide-tab { transition:all .2s ease; cursor:pointer; white-space:nowrap; }
-  .ide-tab:hover { background:rgba(255,255,255,.04) !important; }
+  .ide-tab:hover { background:rgba(255,255,255,.08) !important; }
   .act-icon { transition:all .2s ease; cursor:pointer; }
   .file-row { transition:background .12s ease; cursor:pointer; }
-  .file-row:hover { background:rgba(99,102,241,.09) !important; }
+  .file-row:hover { background:rgba(86,156,214,.15) !important; }
   .panel-tab { transition:all .2s ease; cursor:pointer; }
-  .panel-tab:hover { color:#cbd5e1 !important; }
+  .panel-tab:hover { color:#d4d4d4 !important; }
   .cmd-row { transition:background .1s; cursor:pointer; }
-  .cmd-row:hover { background:rgba(99,102,241,.12) !important; }
+  .cmd-row:hover { background:rgba(86,156,214,.18) !important; }
   .menu-row { transition:background .1s; cursor:pointer; padding:5px 16px; }
-  .menu-row:hover { background:rgba(255,255,255,.06); }
+  .menu-row:hover { background:rgba(255,255,255,.08); }
   .notif-item { transition:background .1s; cursor:pointer; }
-  .notif-item:hover { background:rgba(255,255,255,.04) !important; }
+  .notif-item:hover { background:rgba(255,255,255,.06) !important; }
   .gh-repo { transition:all .15s; cursor:pointer; }
-  .gh-repo:hover { background:rgba(99,102,241,.09) !important; transform:translateX(2px); }
+  .gh-repo:hover { background:rgba(86,156,214,.15) !important; transform:translateX(2px); }
   .gh-file { transition:background .12s; cursor:pointer; }
-  .gh-file:hover { background:rgba(255,255,255,.05) !important; }
+  .gh-file:hover { background:rgba(255,255,255,.08) !important; }
   .notif-bell { transition:all .2s; cursor:pointer; }
-  .notif-bell:hover { color:#e2e8f0 !important; }
+  .notif-bell:hover { color:#d4d4d4 !important; }
   .feature-card { transition:all .25s ease; cursor:default; }
   .feature-card:hover { transform:translateY(-4px); }
   .step-row { transition:transform .2s ease; }
@@ -80,10 +80,11 @@ const STYLES = `
    THEME
 ═══════════════════════════════════════════════════════════════ */
 const C = {
-  bg: "#07090f", surface: "#0d1117", panel: "#161b27", border: "rgba(255,255,255,0.07)",
-  indigo: "#6366f1", violet: "#8b5cf6", amber: "#fbbf24", green: "#10b981",
-  red: "#ef4444", cyan: "#06b6d4", pink: "#f472b6", orange: "#f97316",
-  text: "#e2e8f0", sub: "#94a3b8", dim: "#64748b", muted: "#334155",
+  bg: "#1e1e1e", surface: "#252526", panel: "#2d2d30", border: "#3c3c3c",
+  indigo: "#569cd6", violet: "#c586c0", amber: "#dcdcaa", green: "#4ec9b0",
+  red: "#f44747", cyan: "#4fc1ff", pink: "#d16d9e", orange: "#ce9178",
+  text: "#d4d4d4", sub: "#b0b0b0", dim: "#858585", muted: "#4e4e4e",
+  accent: "#0078d4", statusBar: "#007acc",
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2046,8 +2047,8 @@ function IDEPage({ user }) {
 
         {/* User */}
         <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "4px 10px 4px 6px", borderRadius: 9, background: "rgba(255,255,255,.04)", border: `1px solid ${C.border}`, cursor: "pointer" }}>
-          <div style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "white" }}>{(user || "V").charAt(0).toUpperCase()}</div>
-          <span style={{ fontSize: 12, color: C.sub, fontWeight: 500 }}>{user || "devuser"}</span>
+          <div style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "white" }}>{(typeof user === "string" ? user : user?.login || user?.name || "V").charAt(0).toUpperCase()}</div>
+          <span style={{ fontSize: 12, color: C.sub, fontWeight: 500 }}>{typeof user === "string" ? user : user?.login || user?.name || "devuser"}</span>
         </div>
       </div>
 
