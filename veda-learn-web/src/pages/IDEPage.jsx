@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import VedaEditor from "../components/editor/VedaEditor";
+import useVedaStore from "../store/useVedaStore";
 
 /* ═══════════════════════════════════════════════════════════════
    GLOBAL STYLES
@@ -2140,30 +2140,18 @@ function IDEPage({ user }) {
 
           {/* CODE + MINIMAP */}
           <div style={{ flex: 1, display: "flex", overflow: "hidden", background: C.bg, position: "relative" }}>
-            {/* Line numbers */}
-            <div style={{ width: 44, background: C.bg, borderRight: "1px solid rgba(255,255,255,.025)", padding: "14px 0", textAlign: "right", flexShrink: 0, overflowY: "hidden", userSelect: "none" }}>
-              {(DEMO_CODE[activeFile] || "").split("\n").map((_, i) => (
-                <div key={i} style={{ fontSize: 12, fontFamily: "JetBrains Mono", color: showLesson && activeFile === activeFile && lesson?.lineNumber === i + 1 ? C.amber : C.muted, lineHeight: "21.4px", paddingRight: 10, background: showLesson && lesson?.lineNumber === i + 1 ? "rgba(239,68,68,.06)" : "transparent", transition: "color .2s" }}>
-                  {i + 1}
-                </div>
-              ))}
-            </div>
+            <VedaEditor
+              style={{ flex: 1 }}
+              activeFile={activeFile}
+              code={DEMO_CODE[activeFile] || "// Select a file from the explorer"}
+              language={LANG_MAP[activeFile] || 'plaintext'}
+              onCodeChange={(newVal) => {
+                // For now, DEMO_CODE is hardcoded, so we just let Monaco manage its own internal visual state
+                // until we wire up full openFiles state management from store.
+              }}
+            />
 
-            {/* Code body */}
-            <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", position: "relative" }}>
-              {/* Bug line highlight */}
-              {showLesson && lesson && (
-                <div style={{ position: "absolute", left: 0, right: 0, top: `${(lesson.lineNumber - 1) * 21.4 + 14}px`, height: 21, background: "rgba(239,68,68,.06)", borderLeft: "3px solid rgba(239,68,68,.5)", pointerEvents: "none", zIndex: 2 }} />
-              )}
-              <SyntaxHighlighter
-                language={LANG_MAP[activeFile] || "python"} style={vscDarkPlus}
-                customStyle={{ background: "transparent", margin: 0, padding: "14px 0 14px 16px", fontSize: 13, lineHeight: "21.4px", fontFamily: "JetBrains Mono", minHeight: "100%" }}
-                showLineNumbers={false} wrapLines={false}>
-                {DEMO_CODE[activeFile] || "// Select a file from the explorer"}
-              </SyntaxHighlighter>
-            </div>
-
-            {/* Minimap */}
+            {/* Optional existing Minimap - left untouched for now as roadmap just says replace editor region */}
             <Minimap code={DEMO_CODE[activeFile]} activeFile={activeFile} />
           </div>
 

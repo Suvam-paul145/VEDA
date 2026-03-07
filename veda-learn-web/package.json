@@ -17,6 +17,7 @@
     "axios": "^1.13.6",
     "canvas-confetti": "^1.9.4",
     "mermaid": "^11.12.3",
+    "monaco-editor": "^0.55.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.1",
