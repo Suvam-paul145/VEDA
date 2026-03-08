@@ -120,6 +120,11 @@ const useVedaStore = create(subscribeWithSelector((set) => ({
     weeklyXP: data.weeklyXP || [0, 0, 0, 0, 0, 0, 0],
     conceptMastery: data.conceptMastery || {}
   }),
+  updateProgress: (data) => set((s) => ({
+    xp: s.xp + (data.xpDelta || 0),
+    streak: data.streak ?? s.streak,
+    conceptMastery: data.concepts ? { ...s.conceptMastery, ...data.concepts } : s.conceptMastery,
+  })),
 
   // ─── WEBSOCKET ─────────────────────────────────────────────────
   wsConnected: false,
@@ -140,7 +145,10 @@ const useVedaStore = create(subscribeWithSelector((set) => ({
   // ─── NOTIFICATIONS ─────────────────────────────────────────────
   notifications: [],
   addNotification: (n) => set(s => ({
-    notifications: [{ id: Date.now(), ...n }, ...s.notifications].slice(0, 20)
+    notifications: [{ id: Date.now(), read: false, time: new Date().toISOString(), ...n }, ...s.notifications].slice(0, 50)
+  })),
+  markNotificationRead: (id) => set(s => ({
+    notifications: s.notifications.map(n => n.id === id ? { ...n, read: true } : n),
   })),
   clearNotifications: () => set({ notifications: [] }),
 })))
