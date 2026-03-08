@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
 import VedaEditor from "../components/editor/VedaEditor";
 import useVedaStore from "../store/useVedaStore";
+import { useWebSocket } from "../hooks/useWebSocket";
 import FileTree from "../components/ide/FileTree";
 import GitHubPanel from "../components/ide/GitHubPanel";
 import SourceControl from "../components/ide/SourceControl";
@@ -1678,6 +1679,9 @@ function IDEPage({ user }) {
   const openTabs = useVedaStore(s => s.openTabs);
   const setActiveFile = useVedaStore(s => s.setActiveFile);
   const closeTabAction = useVedaStore(s => s.closeTab);
+
+  // Initialize WebSocket connection
+  const { status: wsStatus, send: wsSend, reconnect: wsReconnect } = useWebSocket();
 
   const [sidebarTab, setSidebarTab] = useState("explorer");
   const [rightPanel, setRightPanel] = useState("lesson");

@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { checkRateLimit } = require('../lib/rateLimit');
 
 module.exports.handler = async (event) => {
     try {
@@ -46,7 +47,25 @@ module.exports.handler = async (event) => {
             };
         }
 
-        // 3. Parse request body
+        // 3. Check rate limiting
+        const isRateLimited = await checkRateLimit(userId);
+        if (isRateLimited) {
+            return {
+                statusCode: 429,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    error: 'Rate limited', 
+                    message: 'Please wait 30 seconds between analysis requests',
+                    cooldown: 30
+                })
+            };
+        }
+
+        // 4. Parse request body
         const body = JSON.parse(event.body || '{}');
         const { fileContent, language, fileName, cursorLine } = body;
 
@@ -115,6 +134,40 @@ module.exports.handler = async (event) => {
 
         if (detected) {
             console.log('Issue detected:', { conceptId: detected, lineNumber, confidence });
+            
+            // Trigger lesson generation asynchronously
+            try {
+                const lessonPayload = {
+                    userId,
+                    concept: detected,
+                    code: fileContent,
+                    language,
+                    confidence,
+                    lineNumber
+                };
+
+                // Call lesson handler asynchronously (fire and forget)
+                const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
+                const lambda = new LambdaClient({ region: process.env.AWS_REGION || 'us-east-1' });
+                
+                const invokeCommand = new InvokeCommand({
+                    FunctionName: `${process.env.AWS_LAMBDA_FUNCTION_NAME?.split('-')[0] || 'veda-learn-api'}-dev-lesson`,
+                    InvocationType: 'Event', // Async invocation
+                    Payload: JSON.stringify({
+                        body: JSON.stringify(lessonPayload),
+                        httpMethod: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                });
+
+                lambda.send(invokeCommand).then(() => {
+                    console.log('Lesson generation triggered for concept:', detected);
+                }).catch((err) => {
+                    console.error('Failed to trigger lesson generation:', err);
+                });
+            } catch (err) {
+                console.error('Error triggering lesson generation:', err);
+            }
             
             return {
                 statusCode: 200,

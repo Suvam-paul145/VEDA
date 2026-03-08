@@ -1,4 +1,3 @@
-// veda-learn-api/lib/websocket.js
 'use strict';
 
 const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require('@aws-sdk/client-apigatewaymanagementapi');
@@ -11,13 +10,18 @@ const dynamo = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1
  * A user might have multiple open tabs — we push to all of them.
  */
 async function getConnectionIds(userId) {
-  const result = await dynamo.send(new QueryCommand({
-    TableName: 'veda-ws-connections',
-    IndexName: 'userId-index',          // GSI: userId → connectionId
-    KeyConditionExpression: 'userId = :uid',
-    ExpressionAttributeValues: { ':uid': { S: userId } },
-  }));
-  return (result.Items || []).map(item => item.connectionId.S);
+  try {
+    const result = await dynamo.send(new QueryCommand({
+      TableName: 'veda-ws-connections',
+      IndexName: 'userId-index',          // GSI: userId → connectionId
+      KeyConditionExpression: 'userId = :uid',
+      ExpressionAttributeValues: { ':uid': { S: userId } },
+    }));
+    return (result.Items || []).map(item => item.connectionId.S);
+  } catch (err) {
+    console.error('[WS] Error getting connection IDs:', err.message);
+    return [];
+  }
 }
 
 /**
@@ -25,7 +29,7 @@ async function getConnectionIds(userId) {
  * Automatically removes stale connections (410 Gone).
  */
 async function pushToConnection(connectionId, payload) {
-  const endpoint = process.env.WEBSOCKET_ENDPOINT || process.env.WS_API_ENDPOINT;
+  const endpoint = process.env.WEBSOCKET_ENDPOINT; // e.g. https://imhoyvukwe.execute-api.us-east-1.amazonaws.com/dev
   const client = new ApiGatewayManagementApiClient({ endpoint });
 
   try {
@@ -38,10 +42,14 @@ async function pushToConnection(connectionId, payload) {
     if (err.$metadata?.httpStatusCode === 410) {
       // Connection is stale — clean it up
       console.log(`[WS] Stale connection ${connectionId} — removing from DynamoDB`);
-      await dynamo.send(new DeleteItemCommand({
-        TableName: 'veda-ws-connections',
-        Key: { connectionId: { S: connectionId } },
-      }));
+      try {
+        await dynamo.send(new DeleteItemCommand({
+          TableName: 'veda-ws-connections',
+          Key: { connectionId: { S: connectionId } },
+        }));
+      } catch (deleteErr) {
+        console.error('[WS] Error cleaning up stale connection:', deleteErr.message);
+      }
       return false;
     }
     console.error(`[WS] Failed to push to ${connectionId}:`, err.message);

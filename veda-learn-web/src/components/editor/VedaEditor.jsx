@@ -70,8 +70,10 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
 
     const setAnalyzing = useVedaStore(s => s.setAnalyzing);
     const setLastAnalysis = useVedaStore(s => s.setLastAnalysis);
+    const addNotification = useVedaStore(s => s.addNotification);
 
     const [localCode, setLocalCode] = useState(code);
+    const [rateLimitedUntil, setRateLimitedUntil] = useState(0);
 
     // Sync when activeFile changes
     const prevFileRef = useRef(activeFile);
@@ -82,6 +84,20 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
 
     // ── Debounced analysis trigger ────────────────────────────
     const runAnalysis = useCallback(async (content) => {
+        // Check if we can analyze (not in cooldown)
+        if (!api.canAnalyze()) {
+            const cooldownTime = api.getCooldownTime();
+            console.log(`[VedaEditor] Skipping analysis - ${cooldownTime}s cooldown remaining`);
+            if (addNotification) {
+                addNotification({
+                    type: 'info',
+                    title: 'Analysis cooldown',
+                    body: `Please wait ${cooldownTime} seconds before analyzing again`
+                });
+            }
+            return;
+        }
+
         setAnalyzing(true);
         try {
             const data = await api.analyze({
@@ -92,13 +108,52 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
             });
             if (data.teach) {
                 setLastAnalysis(data);
+                if (addNotification) {
+                    addNotification({
+                        type: 'success',
+                        title: 'Pattern detected',
+                        body: `Found ${data.conceptId?.replace(/-/g, ' ')} at line ${data.lineNumber}`
+                    });
+                }
+            } else {
+                if (addNotification) {
+                    addNotification({
+                        type: 'info',
+                        title: 'Analysis complete',
+                        body: 'No issues detected in your code'
+                    });
+                }
             }
         } catch (err) {
             console.error('[VedaEditor] Analysis error:', err);
+            
+            // Handle rate limiting errors gracefully
+            if (err.message.includes('wait') || err.message.includes('Rate limited')) {
+                if (addNotification) {
+                    addNotification({
+                        type: 'warning',
+                        title: 'Rate limited',
+                        body: err.message
+                    });
+                }
+                // Set rate limit timer for UI feedback
+                const cooldownTime = api.getCooldownTime();
+                if (cooldownTime > 0) {
+                    setRateLimitedUntil(Date.now() + (cooldownTime * 1000));
+                }
+            } else {
+                if (addNotification) {
+                    addNotification({
+                        type: 'error',
+                        title: 'Analysis failed',
+                        body: 'Unable to analyze code. Please try again later.'
+                    });
+                }
+            }
         } finally {
             setAnalyzing(false);
         }
-    }, [activeFile, language, setAnalyzing, setLastAnalysis]);
+    }, [activeFile, language, setAnalyzing, setLastAnalysis, addNotification]);
 
     useDebounce(runAnalysis, localCode, 30_000);
 

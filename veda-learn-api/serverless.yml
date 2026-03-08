@@ -7,6 +7,7 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
+  stage: dev
   role: arn:aws:iam::034476915822:role/veda-lambda-role
   timeout: 29
   environment:
@@ -16,12 +17,15 @@ provider:
     GITHUB_CLIENT_SECRET: ${env:GITHUB_CLIENT_SECRET}
     JWT_SECRET: ${env:JWT_SECRET}
     OPENSEARCH_ENDPOINT: ${env:OPENSEARCH_ENDPOINT}
-    S3_AUDIO_BUCKET: ${env:S3_AUDIO_BUCKET}
+    S3_AUDIO_BUCKET: veda-learn-audio-dev-034476915822
     S3_CONCEPTS_BUCKET: ${env:S3_CONCEPTS_BUCKET}
     WS_API_ENDPOINT: ${env:WS_API_ENDPOINT}
+    WEBSOCKET_ENDPOINT: ${env:WS_API_ENDPOINT}
+    AUDIO_BUCKET: veda-learn-audio-dev-034476915822
     WEB_APP_URL: ${env:WEB_APP_URL}
     PINECONE_API_KEY: ${env:PINECONE_API_KEY}
     PINECONE_INDEX: ${env:PINECONE_INDEX}
+    GITHUB_PERSONAL_ACCESS_TOKEN: ${env:GITHUB_PERSONAL_ACCESS_TOKEN}
 
 functions:
   authCallback:

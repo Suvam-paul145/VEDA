@@ -23,6 +23,10 @@ client.interceptors.response.use(
   }
 )
 
+// ─── Rate limiting state ──────────────────────────────────────────────────
+let lastAnalysisTime = 0;
+let isInCooldown = false;
+
 // ─── API METHODS ──────────────────────────────────────────────────────
 export const api = {
   // Auth
@@ -31,20 +35,60 @@ export const api = {
     return res.data
   },
 
-  // Core analyze
+  // Core analyze with rate limiting
   async analyze({ fileContent, language, fileName, cursorLine, diagnostics = [] }) {
-    const res = await client.post('/api/analyze', {
-      fileContent, language, fileName, cursorLine, diagnostics
-    })
-    if (res.data.teach && res.data.lineNumber) {
-      useVedaStore.getState().setErrorMarkers([{
-        lineNumber:  res.data.lineNumber,
-        conceptId:   res.data.conceptId,
-        confidence:  res.data.confidence || 0.9,
-      }])
-      useVedaStore.getState().setLastAnalysis(res.data)
+    // Check client-side rate limiting (30 second cooldown)
+    const now = Date.now();
+    const timeSinceLastAnalysis = now - lastAnalysisTime;
+    
+    if (isInCooldown || timeSinceLastAnalysis < 30000) {
+      const remainingTime = Math.ceil((30000 - timeSinceLastAnalysis) / 1000);
+      console.log(`[API] Rate limited - ${remainingTime}s remaining`);
+      throw new Error(`Please wait ${remainingTime} seconds before analyzing again`);
     }
-    return res.data
+
+    try {
+      const res = await client.post('/api/analyze', {
+        fileContent, language, fileName, cursorLine, diagnostics
+      })
+      
+      // Update rate limiting state on successful request
+      lastAnalysisTime = now;
+      isInCooldown = true;
+      setTimeout(() => { isInCooldown = false; }, 30000);
+      
+      if (res.data.teach && res.data.lineNumber) {
+        useVedaStore.getState().setErrorMarkers([{
+          lineNumber:  res.data.lineNumber,
+          conceptId:   res.data.conceptId,
+          confidence:  res.data.confidence || 0.9,
+        }])
+        useVedaStore.getState().setLastAnalysis(res.data)
+      }
+      return res.data
+    } catch (err) {
+      // Handle 429 rate limiting from server
+      if (err.response?.status === 429) {
+        const cooldown = err.response.data?.cooldown || 30;
+        isInCooldown = true;
+        setTimeout(() => { isInCooldown = false; }, cooldown * 1000);
+        throw new Error(`Rate limited by server. Please wait ${cooldown} seconds.`);
+      }
+      throw err;
+    }
+  },
+
+  // Check if analysis is available (not in cooldown)
+  canAnalyze() {
+    const timeSinceLastAnalysis = Date.now() - lastAnalysisTime;
+    return !isInCooldown && timeSinceLastAnalysis >= 30000;
+  },
+
+  // Get remaining cooldown time in seconds
+  getCooldownTime() {
+    if (!isInCooldown) return 0;
+    const timeSinceLastAnalysis = Date.now() - lastAnalysisTime;
+    return Math.max(0, Math.ceil((30000 - timeSinceLastAnalysis) / 1000));
   },
 
   // Lesson generation

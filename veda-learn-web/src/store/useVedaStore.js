@@ -73,10 +73,12 @@ const useVedaStore = create(subscribeWithSelector((set) => ({
   analysisResult: null,
   errorMarkers: [],
   lastAnalysis: null,
+  rateLimitedUntil: 0,
   setAnalyzing: (v) => set({ analyzing: v }),
   setAnalysisResult: (r) => set({ analysisResult: r }),
   setErrorMarkers: (markers) => set({ errorMarkers: markers }),
   setLastAnalysis: (data) => set({ lastAnalysis: data }),
+  setRateLimitedUntil: (timestamp) => set({ rateLimitedUntil: timestamp }),
 
   // ─── PANELS ────────────────────────────────────────────────────
   activePanel: 'lesson',
@@ -95,6 +97,12 @@ const useVedaStore = create(subscribeWithSelector((set) => ({
     activePanel: 'lesson',
     panelDot: {}
   }),
+  setCurrentLesson: (lesson) => set({
+    currentLesson: lesson,
+    lessonVisible: true,
+    activePanel: 'lesson',
+    panelDot: {}
+  }),
   clearLesson: () => set({ currentLesson: null, lessonVisible: false }),
 
   // ─── QUIZ ──────────────────────────────────────────────────────
@@ -102,6 +110,7 @@ const useVedaStore = create(subscribeWithSelector((set) => ({
   quizActive: false,
   quizScore: 0,
   setQuiz: (quiz) => set({ currentQuiz: quiz, quizActive: true, activePanel: 'quiz' }),
+  setCurrentQuiz: (quiz) => set({ currentQuiz: quiz, quizActive: true, activePanel: 'quiz' }),
   setQuizScore: (score) => set({ quizScore: score }),
 
   // ─── PROGRESS ──────────────────────────────────────────────────
