@@ -159,9 +159,14 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
             () => runAnalysis(editor.getValue())
         );
 
+        // Add custom event listener for IDEPage "Analyze" button
+        const handleForceAnalyze = () => runAnalysis(editor.getValue());
+        window.addEventListener('veda-force-analyze', handleForceAnalyze);
+
         // Clean up subscription on dispose
         editor.onDidDispose(() => {
             unsubscribe();
+            window.removeEventListener('veda-force-analyze', handleForceAnalyze);
         });
     };
 

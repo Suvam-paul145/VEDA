@@ -21,12 +21,14 @@ export default function AuthCallback() {
           id: payload.userId,
           login: payload.username,
           name: payload.username,
-          avatar: `https://github.com/${payload.username}.png`,
+          avatar: payload.avatar || `https://github.com/${payload.username}.png`,
+          githubToken: payload.githubToken,  // Extract GitHub token for API access
+          email: payload.email || ''
         })
         navigate('/ide')
       } catch (err) {
         console.error('Auth token decode error:', err)
-        setError('Failed to decode authentication token')
+        setTimeout(() => setError('Failed to decode authentication token'), 0)
       }
     } else if (code) {
       // Frontend-initiated exchange — call backend API
@@ -34,7 +36,7 @@ export default function AuthCallback() {
         .then(data => {
           const jwt = data.token || data.jwt
           if (!jwt) {
-            setError('No token received from server')
+            setTimeout(() => setError('No token received from server'), 0)
             return
           }
           const payload = JSON.parse(atob(jwt.split('.')[1]))
@@ -42,13 +44,15 @@ export default function AuthCallback() {
             id: payload.userId,
             login: payload.username,
             name: payload.username,
-            avatar: `https://github.com/${payload.username}.png`,
+            avatar: payload.avatar || `https://github.com/${payload.username}.png`,
+            githubToken: payload.githubToken,  // Extract GitHub token for API access
+            email: payload.email || ''
           })
           navigate('/ide')
         })
         .catch(err => {
           console.error('Auth code exchange error:', err)
-          setError(err.response?.data?.error || err.message || 'Authentication failed')
+          setTimeout(() => setError(err.response?.data?.error || err.message || 'Authentication failed'), 0)
         })
     } else {
       navigate('/login')

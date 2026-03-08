@@ -1,2 +1,9 @@
 // handlers/quiz.js — stub
-module.exports.handler = async () => ({ statusCode: 200, body: JSON.stringify({ ok: true }) });
+module.exports.handler = async () => ({
+    statusCode: 200,
+    headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization'
+    },
+    body: JSON.stringify({ ok: true })
+});

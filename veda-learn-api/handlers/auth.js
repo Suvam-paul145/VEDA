@@ -48,9 +48,15 @@ module.exports.callback = async (event) => {
             ConditionExpression: 'attribute_not_exists(userId)'
         })).catch(() => { }); // Ignore if user already exists
 
-        // Issue 30-day JWT
+        // Issue 30-day JWT with GitHub token included
         const token = jwt.sign(
-            { userId, username: ghUser.login },
+            { 
+                userId, 
+                username: ghUser.login,
+                githubToken: access_token,  // Include GitHub token for API access
+                avatar: ghUser.avatar_url,
+                email: ghUser.email || ''
+            },
             process.env.JWT_SECRET,
             { expiresIn: '30d' }
         );

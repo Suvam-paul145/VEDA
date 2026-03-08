@@ -18,7 +18,10 @@ export default function GitHubPanel({ onConnected, addToast }) {
     const [loadingRepo, setLoadingRepo] = useState(null);
 
     const handleConnect = async () => {
-        if (!tokenInput.trim()) return;
+        if (!tokenInput.trim()) {
+            addToast("Token Required", "Please paste a GitHub Personal Access Token.", "warning");
+            return;
+        }
         setConnecting(true);
         try {
             const user = await initGithub(tokenInput.trim());
@@ -57,34 +60,70 @@ export default function GitHubPanel({ onConnected, addToast }) {
         }
     };
 
+    const loadLocalDirectory = async () => {
+        try {
+            const { openLocalDirectory } = await import('../../lib/localFs');
+            const { name, tree, handle } = await openLocalDirectory();
+            setActiveRepo(
+                { owner: "local", name, default_branch: "local" },
+                tree
+            );
+            useVedaStore.setState({ localDirHandle: handle });
+            addToast("Workspace loaded", `Local folder ${name} opened`, "success");
+
+            // Auto switch to explorer tab
+            useVedaStore.getState().setSidebarTab("explorer");
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                addToast("Error", e.message, "error");
+            }
+        }
+    };
+
     if (!githubUser) return (
-        <div style={{ padding: 14, fontFamily: "Syne" }}>
-            <div style={{ fontSize: 11, color: C.dim, fontFamily: "JetBrains Mono", marginBottom: 14, lineHeight: 1.6 }}>
-                Connect GitHub to browse repos and load files into the IDE.
-            </div>
-            <div style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 11, color: C.sub, marginBottom: 6, fontWeight: 600 }}>Personal Access Token</div>
-                <input
-                    value={tokenInput} onChange={e => setTokenInput(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleConnect()}
-                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                    type="password"
-                    style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 10px", fontSize: 11, color: C.text, fontFamily: "JetBrains Mono", outline: "none", transition: "border-color .2s", marginBottom: 8 }}
-                    onFocus={e => e.target.style.borderColor = "rgba(99,102,241,.45)"}
-                    onBlur={e => e.target.style.borderColor = C.border}
-                />
-                <div style={{ fontSize: 10, color: C.muted, fontFamily: "JetBrains Mono", marginBottom: 10 }}>
-                    Needs <code style={{ color: C.sub }}>repo</code> (read/write) scope to be able to push changes
+        <div style={{ padding: 14, fontFamily: "Syne", display: "flex", flexDirection: "column", gap: 24 }}>
+            <div>
+                <div style={{ fontSize: 11, color: C.dim, fontFamily: "JetBrains Mono", marginBottom: 14, lineHeight: 1.6 }}>
+                    Load a local folder from your computer.
                 </div>
-                <button onClick={handleConnect} disabled={!tokenInput.trim() || connecting}
-                    style={{ width: "100%", padding: "9px 0", borderRadius: 9, background: tokenInput.trim() ? `linear-gradient(135deg,${C.indigo},${C.violet})` : C.surface, border: `1px solid ${tokenInput.trim() ? "transparent" : C.border}`, color: "white", fontFamily: "Syne", fontWeight: 700, fontSize: 12, cursor: tokenInput.trim() ? "pointer" : "default", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
-                    {connecting
-                        ? <><div style={{ width: 12, height: 12, border: "1.5px solid rgba(255,255,255,.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin .7s linear infinite" }} />Connecting…</>
-                        : <>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
-                            Connect GitHub
-                        </>}
+                <button onClick={loadLocalDirectory}
+                    style={{ width: "100%", padding: "9px 0", borderRadius: 9, background: C.surface, border: `1px solid ${C.border}`, color: "white", fontFamily: "Syne", fontWeight: 700, fontSize: 12, cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,.45)"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
+                    <span style={{ fontSize: 13 }}>📁</span> Open Local Folder
                 </button>
+            </div>
+
+            <div style={{ height: 1, background: C.border, width: "100%" }} />
+
+            <div>
+                <div style={{ fontSize: 11, color: C.dim, fontFamily: "JetBrains Mono", marginBottom: 14, lineHeight: 1.6 }}>
+                    Or connect GitHub to browse repos.
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, color: C.sub, marginBottom: 6, fontWeight: 600 }}>Personal Access Token</div>
+                    <input
+                        value={tokenInput} onChange={e => setTokenInput(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && handleConnect()}
+                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                        type="password"
+                        style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 10px", fontSize: 11, color: C.text, fontFamily: "JetBrains Mono", outline: "none", transition: "border-color .2s", marginBottom: 8 }}
+                        onFocus={e => e.target.style.borderColor = "rgba(99,102,241,.45)"}
+                        onBlur={e => e.target.style.borderColor = C.border}
+                    />
+                    <div style={{ fontSize: 10, color: C.muted, fontFamily: "JetBrains Mono", marginBottom: 10 }}>
+                        Needs <code style={{ color: C.sub }}>repo</code> (read/write) scope to be able to push changes
+                    </div>
+                    <button onClick={handleConnect} disabled={connecting}
+                        style={{ width: "100%", padding: "9px 0", borderRadius: 9, background: `linear-gradient(135deg,${C.indigo},${C.violet})`, border: `transparent`, color: "white", fontFamily: "Syne", fontWeight: 700, fontSize: 12, cursor: connecting ? "wait" : "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                        {connecting
+                            ? <><div style={{ width: 12, height: 12, border: "1.5px solid rgba(255,255,255,.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin .7s linear infinite" }} />Connecting…</>
+                            : <>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
+                                Connect GitHub
+                            </>}
+                    </button>
+                </div>
             </div>
         </div>
     );

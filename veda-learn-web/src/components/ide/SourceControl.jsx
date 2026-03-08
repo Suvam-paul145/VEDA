@@ -16,26 +16,43 @@ export default function SourceControl({ addToast }) {
     const changesList = Object.keys(gitChanges);
 
     const handleCommit = async () => {
-        if (!message.trim() || changesList.length === 0 || !activeRepo) return;
+        if (changesList.length === 0 || !activeRepo) return;
+
+        const isLocal = activeRepo.owner === "local";
+        if (!isLocal && !message.trim()) return;
 
         setCommitting(true);
-        addToast("Committing...", `Pushing ${changesList.length} files to ${activeRepo.name}`, "info");
+        addToast(isLocal ? "Saving..." : "Committing...", isLocal ? `Writing ${changesList.length} files to disk` : `Pushing ${changesList.length} files to ${activeRepo.name}`, "info");
 
         try {
-            await pushChanges(
-                activeRepo.owner,
-                activeRepo.name,
-                activeRepo.default_branch,
-                gitChanges,
-                message
-            );
-
-            clearGitChanges();
-            setMessage('');
-            addToast("Success!", `Changes pushed to ${activeRepo.default_branch}`, "success");
+            if (isLocal) {
+                const { writeLocalFile } = await import('../../lib/localFs');
+                const tree = useVedaStore.getState().fileTree;
+                for (const [path, content] of Object.entries(gitChanges)) {
+                    const node = tree.find(n => n.path === path);
+                    if (node && node.handle) {
+                        await writeLocalFile(node.handle, content);
+                    } else {
+                        throw new Error(`Could not find file handle for ${path}`);
+                    }
+                }
+                clearGitChanges();
+                addToast("Saved!", `Changes written to local disk`, "success");
+            } else {
+                await pushChanges(
+                    activeRepo.owner,
+                    activeRepo.name,
+                    activeRepo.default_branch,
+                    gitChanges,
+                    message
+                );
+                clearGitChanges();
+                setMessage('');
+                addToast("Success!", `Changes pushed to ${activeRepo.default_branch}`, "success");
+            }
         } catch (err) {
             console.error(err);
-            addToast("Failed to push", err.message, "error");
+            addToast("Failed to save", err.message, "error");
         } finally {
             setCommitting(false);
         }
@@ -73,19 +90,21 @@ export default function SourceControl({ addToast }) {
             </div>
 
             <div style={{ marginTop: "auto" }}>
-                <input
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    placeholder="Commit message"
-                    disabled={changesList.length === 0 || committing}
-                    style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 10px", fontSize: 12, color: C.text, fontFamily: "Syne", outline: "none", marginBottom: 10 }}
-                />
+                {activeRepo.owner !== "local" && (
+                    <input
+                        value={message}
+                        onChange={e => setMessage(e.target.value)}
+                        placeholder="Commit message"
+                        disabled={changesList.length === 0 || committing}
+                        style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 10px", fontSize: 12, color: C.text, fontFamily: "Syne", outline: "none", marginBottom: 10 }}
+                    />
+                )}
                 <button
                     onClick={handleCommit}
-                    disabled={changesList.length === 0 || !message.trim() || committing}
-                    style={{ width: "100%", padding: "10px 0", borderRadius: 9, background: changesList.length > 0 && message.trim() ? `linear-gradient(135deg,${C.indigo},${C.violet})` : C.surface, border: "none", color: changesList.length > 0 && message.trim() ? "white" : C.dim, fontFamily: "Syne", fontWeight: 600, fontSize: 12, cursor: changesList.length > 0 && message.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                    disabled={changesList.length === 0 || (activeRepo.owner !== "local" && !message.trim()) || committing}
+                    style={{ width: "100%", padding: "10px 0", borderRadius: 9, background: changesList.length > 0 && (activeRepo.owner === "local" || message.trim()) ? `linear-gradient(135deg,${C.indigo},${C.violet})` : C.surface, border: "none", color: changesList.length > 0 && (activeRepo.owner === "local" || message.trim()) ? "white" : C.dim, fontFamily: "Syne", fontWeight: 600, fontSize: 12, cursor: changesList.length > 0 && (activeRepo.owner === "local" || message.trim()) ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                 >
-                    {committing ? <><div style={{ width: 12, height: 12, border: "1.5px solid rgba(255,255,255,.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin .7s linear infinite" }} />Pushing…</> : <>✓ Commit & Push</>}
+                    {committing ? <><div style={{ width: 12, height: 12, border: "1.5px solid rgba(255,255,255,.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin .7s linear infinite" }} />{activeRepo.owner === "local" ? "Saving…" : "Pushing…"}</> : <>{activeRepo.owner === "local" ? "💾 Save to Disk" : "✓ Commit & Push"}</>}
                 </button>
             </div>
         </div>

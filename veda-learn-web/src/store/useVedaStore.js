@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 
-const useVedaStore = create(subscribeWithSelector((set, get) => ({
+const useVedaStore = create(subscribeWithSelector((set) => ({
   // ─── AUTH ──────────────────────────────────────────────────────
   jwt: localStorage.getItem('veda_jwt') || null,
   user: JSON.parse(localStorage.getItem('veda_user') || 'null'),
@@ -29,6 +29,7 @@ const useVedaStore = create(subscribeWithSelector((set, get) => ({
   // ─── EDITOR (multi-file for Monaco) ────────────────────────────
   activeFile: 'cart.py',
   openFiles: {},
+  openTabs: ['cart.py', 'api.ts'], // Track open tabs globally
   updateFileContent: (fileName, content) =>
     set(s => {
       // If we're tracking a github repo, also save standard edit to gitChanges
@@ -40,18 +41,31 @@ const useVedaStore = create(subscribeWithSelector((set, get) => ({
       }
       return { openFiles: { ...s.openFiles, [fileName]: { ...s.openFiles[fileName], content } } };
     }),
-  setActiveFile: (name) => set({ activeFile: name }),
+  setActiveFile: (name) => set(s => {
+    // Also push to openTabs if it's not already there
+    const newTabs = s.openTabs.includes(name) ? s.openTabs : [...s.openTabs, name];
+    return { activeFile: name, openTabs: newTabs };
+  }),
+  setOpenTabs: (tabs) => set({ openTabs: tabs }),
+  closeTab: (name) => set(s => {
+    const next = s.openTabs.filter(t => t !== name);
+    let nextActive = s.activeFile;
+    if (s.activeFile === name && next.length > 0) nextActive = next[next.length - 1];
+    else if (next.length === 0) nextActive = null;
+    return { openTabs: next, activeFile: nextActive };
+  }),
 
-  // ─── GITHUB INTEGRATION ────────────────────────────────────────
+  // ─── GITHUB / LOCAL INTEGRATION ────────────────────────────────────────
   githubToken: null,
   githubUser: null,
   repos: [],
-  activeRepo: null, // { owner, name, default_branch }
-  fileTree: [],     // github tree items
+  activeRepo: null, // { owner, name, default_branch } owner='local' for local folders
+  fileTree: [],     // github tree items or local tree items
+  localDirHandle: null,
   gitChanges: {},   // { path: newContent }
   setGithubAuth: (token, user) => set({ githubToken: token, githubUser: user }),
   setRepos: (repos) => set({ repos }),
-  setActiveRepo: (repo, tree) => set({ activeRepo: repo, fileTree: tree, gitChanges: {}, activeFile: null, openFiles: {} }),
+  setActiveRepo: (repo, tree) => set({ activeRepo: repo, fileTree: tree, gitChanges: {}, activeFile: null, openFiles: {}, openTabs: [], localDirHandle: null }),
   clearGitChanges: () => set({ gitChanges: {} }),
 
   // ─── ANALYSIS ──────────────────────────────────────────────────

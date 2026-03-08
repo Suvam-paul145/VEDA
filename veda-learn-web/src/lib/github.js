@@ -1,17 +1,14 @@
 import { Octokit } from '@octokit/rest';
 
 let octokit = null;
-let currentUser = null;
 
 export const initGithub = async (token) => {
     octokit = new Octokit({ auth: token });
     try {
         const { data } = await octokit.rest.users.getAuthenticated();
-        currentUser = data;
         return data;
-    } catch (error) {
+    } catch {
         octokit = null;
-        currentUser = null;
         throw new Error('Invalid GitHub token or failed to authenticate.');
     }
 };

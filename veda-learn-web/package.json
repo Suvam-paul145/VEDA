@@ -14,6 +14,7 @@
     "@octokit/auth-token": "^6.0.0",
     "@octokit/rest": "^22.0.1",
     "@tailwindcss/postcss": "^4.2.1",
+    "@vscode/codicons": "^0.0.44",
     "axios": "^1.13.6",
     "canvas-confetti": "^1.9.4",
     "mermaid": "^11.12.3",
@@ -23,6 +24,8 @@
     "react-router-dom": "^7.13.1",
     "react-syntax-highlighter": "^16.1.1",
     "three": "^0.183.2",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

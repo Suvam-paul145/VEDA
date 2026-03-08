@@ -2,13 +2,15 @@ import { useState, useMemo } from 'react';
 import useVedaStore from '../../store/useVedaStore';
 import { fetchFileContent } from '../../lib/github';
 
+import '@vscode/codicons/dist/codicon.css';
+
 const C = {
     bg: "#07090f", surface: "#0d1117", border: "rgba(255,255,255,.08)",
     text: "#f8fafc", sub: "#cbd5e1", dim: "#94a3b8", muted: "#64748b",
     indigo: "#6366f1", orange: "#f97316", amber: "#fbbf24"
 };
 
-const ICONS = { python: "🐍", typescript: "💙", javascript: "🟡", json: "📋", folder: "📁" };
+const ICONS = { python: "symbol-method", typescript: "file-code", javascript: "file-code", json: "json", folder: "folder" };
 
 const getLangFromPath = (path) => {
     const ext = path.split('.').pop()?.toLowerCase();
@@ -84,15 +86,15 @@ function TreeNode({ node, depth, activeFile, openFiles, gitChanges, onFileClick,
             >
                 {isFolder ? (
                     <>
-                        <span style={{ fontSize: 9, color: C.dim, minWidth: 8 }}>{isOpen ? "▾" : "▸"}</span>
-                        <span style={{ color: C.orange }}>{ICONS.folder}</span>
-                        <span style={{ marginLeft: 2, fontSize: 11.5 }}>{node.name}</span>
+                        <i className={`codicon codicon-chevron-${isOpen ? 'down' : 'right'}`} style={{ fontSize: 13, color: C.dim, minWidth: 14 }} />
+                        <i className={`codicon codicon-${isOpen ? 'folder-opened' : 'folder'}`} style={{ fontSize: 13, color: C.dim }} />
+                        <span style={{ marginLeft: 6, fontSize: 12 }}>{node.name}</span>
                     </>
                 ) : (
                     <>
-                        <span style={{ minWidth: 12, display: "inline-block", textAlign: "center", visibility: 'hidden' }}></span>
-                        <span style={{ fontSize: 13 }}>{ICONS[getLangFromPath(node.name)] || "📄"}</span>
-                        <span style={{ fontSize: 11.5, color: isActive ? C.text : C.sub }}>{node.name}</span>
+                        <span style={{ minWidth: 20, display: "inline-block", textAlign: "center", visibility: 'hidden' }}></span>
+                        <i className={`codicon codicon-${ICONS[getLangFromPath(node.name)] || "file"}`} style={{ fontSize: 13, color: C.indigo }} />
+                        <span style={{ marginLeft: 6, fontSize: 12, color: isActive ? C.text : C.sub }}>{node.name}</span>
                         {isModified && <span style={{ marginLeft: "auto", fontSize: 14, color: C.amber, lineHeight: 1 }}>•</span>}
                     </>
                 )}
@@ -136,7 +138,16 @@ export default function FileTree({ addToast }) {
 
         try {
             addToast("Loading...", `Fetching ${path.split('/').pop()}`, "info");
-            const content = await fetchFileContent(activeRepo.owner, activeRepo.name, path);
+
+            let content = "";
+            if (activeRepo.owner === "local") {
+                const { readLocalFile } = await import('../../lib/localFs');
+                const node = fileTree.find(n => n.path === path);
+                if (!node || !node.handle) throw new Error("File not found in local workspace");
+                content = await readLocalFile(node.handle);
+            } else {
+                content = await fetchFileContent(activeRepo.owner, activeRepo.name, path);
+            }
 
             // Update store: add to openFiles and set active
             updateFileContent(path, content);

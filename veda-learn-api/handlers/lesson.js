@@ -13,7 +13,21 @@ module.exports.handler = async (event) => {
     // const ragContext = similarConcepts.map(c => c.content).join('\n\n');
     // ──────────────────────────────────────────────────────────────────
 
-    return { statusCode: 200, body: JSON.stringify({ ok: true }) };
+    return {
+        statusCode: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization'
+        },
+        body: JSON.stringify({ ok: true })
+    };
 };
 
-module.exports.deepHandler = async () => ({ statusCode: 200, body: JSON.stringify({ ok: true }) });
+module.exports.deepHandler = async () => ({
+    statusCode: 200,
+    headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization'
+    },
+    body: JSON.stringify({ ok: true })
+});

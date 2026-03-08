@@ -5,6 +5,7 @@ import useVedaStore from "../store/useVedaStore";
 import FileTree from "../components/ide/FileTree";
 import GitHubPanel from "../components/ide/GitHubPanel";
 import SourceControl from "../components/ide/SourceControl";
+import TerminalPanel from "../components/ide/TerminalPanel";
 
 /* ═══════════════════════════════════════════════════════════════
    GLOBAL STYLES
@@ -659,10 +660,17 @@ function IDEAmbient() {
    CONFETTI
 ═══════════════════════════════════════════════════════════════ */
 function ConfettiCanvas({ active }) {
-  const particles = active ? Array.from({ length: 28 }, (_, i) => ({
-    id: i, x: Math.random() * 100, color: ["#6366f1", "#8b5cf6", "#fbbf24", "#10b981", "#f472b6", "#06b6d4"][i % 6],
-    delay: `${Math.random() * 0.4}s`, size: 6 + Math.random() * 8, duration: `${1.2 + Math.random() * .8}s`,
-  })) : [];
+  const [particles, setParticles] = useState([]);
+  useEffect(() => {
+    if (active) {
+      setTimeout(() => setParticles(Array.from({ length: 28 }, (_, i) => ({
+        id: i, x: Math.random() * 100, color: ["#6366f1", "#8b5cf6", "#fbbf24", "#10b981", "#f472b6", "#06b6d4"][i % 6],
+        delay: `${Math.random() * 0.4}s`, size: 6 + Math.random() * 8, duration: `${1.2 + Math.random() * .8}s`,
+      }))), 0);
+    } else {
+      setTimeout(() => setParticles([]), 0);
+    }
+  }, [active]);
   if (!active) return null;
   return (
     <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999, overflow: "hidden" }}>
@@ -814,7 +822,7 @@ function SettingsPanel({ onClose }) {
 /* ═══════════════════════════════════════════════════════════════
    MENU DROPDOWN
 ═══════════════════════════════════════════════════════════════ */
-function MenuDropdown({ label, items, onClose }) {
+function MenuDropdown({ items, onClose }) {
   return (
     <div style={{ position: "fixed", zIndex: 7000, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, minWidth: 200, boxShadow: "0 16px 40px rgba(0,0,0,.7)", padding: "4px 0", animation: "fadeDown .15s ease both" }}>
       {items.map((item, i) =>
@@ -1196,7 +1204,7 @@ function LoginPage({ onLogin, onBack }) {
 ═══════════════════════════════════════════════════════════════ */
 function LessonPanel({ lesson, onGotIt, onDeepDive }) {
   const [vis, setVis] = useState(false);
-  useEffect(() => { if (lesson) { setVis(false); setTimeout(() => setVis(true), 60); } }, [lesson]);
+  useEffect(() => { if (lesson) { setTimeout(() => { setVis(false); setTimeout(() => setVis(true), 60); }, 0); } }, [lesson]);
 
   if (!lesson) return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28, textAlign: "center" }}>
@@ -1233,11 +1241,11 @@ function LessonPanel({ lesson, onGotIt, onDeepDive }) {
         <div style={{ padding: "8px 13px", borderBottom: `1px solid ${C.border}`, fontSize: 10, fontWeight: 700, color: C.dim, fontFamily: "JetBrains Mono", letterSpacing: ".07em", textTransform: "uppercase" }}>Code Fix</div>
         <div style={{ padding: "11px 13px" }}>
           <div style={{ fontSize: 10, color: C.red, fontFamily: "JetBrains Mono", marginBottom: 4 }}>⚠ Before</div>
-          <SyntaxHighlighter language="python" style={vscDarkPlus} customStyle={{ borderRadius: 7, fontSize: 11, margin: "0 0 10px", padding: "9px 11px" }}>
+          <SyntaxHighlighter language="python" customStyle={{ borderRadius: 7, fontSize: 11, margin: "0 0 10px", padding: "9px 11px" }}>
             {lesson.codeBefore}
           </SyntaxHighlighter>
           <div style={{ fontSize: 10, color: C.green, fontFamily: "JetBrains Mono", marginBottom: 4 }}>✓ After</div>
-          <SyntaxHighlighter language="python" style={vscDarkPlus} customStyle={{ borderRadius: 7, fontSize: 11, margin: 0, padding: "9px 11px" }}>
+          <SyntaxHighlighter language="python" customStyle={{ borderRadius: 7, fontSize: 11, margin: 0, padding: "9px 11px" }}>
             {lesson.codeAfter}
           </SyntaxHighlighter>
           {lesson.codeComment && <p style={{ fontSize: 11, color: "#a78bfa", fontFamily: "JetBrains Mono", margin: "7px 0 0", fontStyle: "italic" }}>{lesson.codeComment}</p>}
@@ -1666,11 +1674,16 @@ function Minimap({ code, activeFile }) {
    IDE PAGE
 ═══════════════════════════════════════════════════════════════ */
 function IDEPage({ user }) {
-  const [activeFile, setActiveFile] = useState("cart.py");
-  const [openTabs, setOpenTabs] = useState(["cart.py", "api.ts"]);
+  const activeFile = useVedaStore(s => s.activeFile);
+  const openTabs = useVedaStore(s => s.openTabs);
+  const setActiveFile = useVedaStore(s => s.setActiveFile);
+  const closeTabAction = useVedaStore(s => s.closeTab);
+
   const [sidebarTab, setSidebarTab] = useState("explorer");
   const [rightPanel, setRightPanel] = useState("lesson");
-  const [analyzing, setAnalyzing] = useState(false);
+  const [rightVis, setRightVis] = useState(true);
+  const analyzing = useVedaStore(s => s.analyzing);
+  const lastAnalysis = useVedaStore(s => s.lastAnalysis);
   const [lesson, setLesson] = useState(null);
   const [quizActive, setQuizActive] = useState(false);
   const [showLesson, setShowLesson] = useState(false);
@@ -1695,9 +1708,7 @@ function IDEPage({ user }) {
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
   }, []);
 
-  const addNotif = useCallback((notif) => {
-    setNotifs(n => [{ id: Date.now(), read: false, time: "just now", ...notif }, ...n]);
-  }, []);
+
 
   const markRead = (id) => setNotifs(n => n.map(x => x.id === id ? { ...x, read: true } : x));
   const markAllRead = () => setNotifs(n => n.map(x => ({ ...x, read: true })));
@@ -1705,36 +1716,33 @@ function IDEPage({ user }) {
 
   const openFile = (name) => {
     setActiveFile(name);
-    if (!openTabs.includes(name)) setOpenTabs(t => [...t, name]);
     setSidebarTab(s => s); // keep sidebar
   };
 
   const closeTab = (name, e) => {
     e.stopPropagation();
-    const next = openTabs.filter(t => t !== name);
-    setOpenTabs(next);
-    if (activeFile === name && next.length > 0) setActiveFile(next[next.length - 1]);
+    closeTabAction(name);
   };
 
   const triggerAnalyze = useCallback(() => {
     if (analyzing) return;
-    setAnalyzing(true);
-    addToast("Analyzing…", "Claude Haiku scanning " + activeFile, "info");
-    setTimeout(() => {
-      const lessonData = LESSONS_BY_FILE[activeFile];
-      setAnalyzing(false);
-      if (lessonData) {
-        setLesson(lessonData);
+    window.dispatchEvent(new Event('veda-force-analyze'));
+  }, [analyzing]);
+
+  // Sync the right panel with the latest analysis results from VedaEditor
+  useEffect(() => {
+    if (lastAnalysis && lastAnalysis.teach) {
+      setTimeout(() => {
+        setLesson(lastAnalysis);
         setShowLesson(true);
         setRightPanel("lesson");
+        setRightVis(true);
         setDeepDive(false);
         setXp(x => x + 5);
-        addToast("Mistake detected!", `${lessonData.conceptId} · Line ${lessonData.lineNumber}`, "warning");
-      } else {
-        addToast("No issues found", "Code looks clean!", "success");
-      }
-    }, 2400);
-  }, [activeFile, analyzing, addToast]);
+        addToast("Mistake detected!", `${lastAnalysis.conceptId} · Line ${lastAnalysis.lineNumber}`, "warning");
+      }, 0);
+    }
+  }, [lastAnalysis, addToast]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -1752,6 +1760,7 @@ function IDEPage({ user }) {
   const handleGotIt = () => {
     setQuizActive(true);
     setRightPanel("quiz");
+    setRightVis(true);
     setXp(x => x + 5);
     addToast("Quiz unlocked!", "Answer 3 questions to earn +15 XP", "info");
   };
@@ -1767,10 +1776,12 @@ function IDEPage({ user }) {
       "Run Analysis": triggerAnalyze,
       "Toggle Terminal": () => setBottomVis(v => !v),
       "Open Settings": () => setSettings(true),
-      "View Progress": () => setRightPanel("progress"),
-      "Open Doubt Chat": () => setRightPanel("doubt"),
-      "Start Quiz": () => { setQuizActive(true); setRightPanel("quiz"); },
-      "Toggle Lesson Panel": () => setRightPanel("lesson"),
+      "View Progress": () => { setRightPanel("progress"); setRightVis(true); },
+      "Open Doubt Chat": () => { setRightPanel("doubt"); setRightVis(true); },
+      "Start Quiz": () => { setQuizActive(true); setRightPanel("quiz"); setRightVis(true); },
+      "Toggle Lesson Panel": () => { setRightPanel("lesson"); setRightVis(v => !v); },
+      "Toggle Right Panel": () => setRightVis(v => !v),
+      "Toggle Left Sidebar": () => setSidebarTab(s => s ? null : "explorer"),
     };
     actions[item.label]?.();
     addToast(item.label, "", "info");
@@ -1778,21 +1789,23 @@ function IDEPage({ user }) {
 
   const MENUS = {
     File: [
-      { label: "New File", shortcut: "Ctrl+N", action: () => { } },
-      { label: "Open File", shortcut: "Ctrl+O", action: () => { } },
+      { label: "New File", shortcut: "Ctrl+N", action: () => addToast("Not yet implemented", "This action is coming soon.", "info") },
+      { label: "Open File", shortcut: "Ctrl+O", action: () => addToast("Not yet implemented", "This action is coming soon.", "info") },
       { label: "Save", shortcut: "Ctrl+S", action: () => addToast("Saved", "cart.py saved", "success") },
       "---",
-      { label: "Close Tab", shortcut: "Ctrl+W", action: () => { } },
+      { label: "Close Tab", shortcut: "Ctrl+W", action: () => { if (activeFile) closeTab(activeFile, { stopPropagation: () => { } }); } },
     ],
     Edit: [
-      { label: "Undo", shortcut: "Ctrl+Z", action: () => { } },
-      { label: "Redo", shortcut: "Ctrl+Y", action: () => { } },
+      { label: "Undo", shortcut: "Ctrl+Z", action: () => addToast("Not yet implemented", "This action is coming soon.", "info") },
+      { label: "Redo", shortcut: "Ctrl+Y", action: () => addToast("Not yet implemented", "This action is coming soon.", "info") },
       "---",
       { label: "Find", shortcut: "Ctrl+F", action: () => setSidebarTab("search") },
-      { label: "Format Document", shortcut: "⇧+Alt+F", action: () => { } },
+      { label: "Format Document", shortcut: "⇧+Alt+F", action: () => addToast("Not yet implemented", "This action is coming soon.", "info") },
     ],
     View: [
       { label: "Command Palette", shortcut: "Ctrl+P", action: () => setCmdPalette(true) },
+      { label: "Toggle Left Sidebar", shortcut: "Ctrl+B", action: () => setSidebarTab(s => s ? null : "explorer") },
+      { label: "Toggle Right Panel", shortcut: "Ctrl+]", action: () => setRightVis(v => !v) },
       { label: "Toggle Terminal", shortcut: "Ctrl+`", action: () => setBottomVis(v => !v) },
       "---",
       { label: "Settings", shortcut: "Ctrl+,", action: () => setSettings(true) },
@@ -1803,7 +1816,7 @@ function IDEPage({ user }) {
     ],
     Terminal: [
       { label: "New Terminal", shortcut: "Ctrl+⇧+`", action: () => { setBottomVis(true); setBottomPanel("terminal"); } },
-      { label: "Clear Terminal", shortcut: "", action: () => { } },
+      { label: "Clear Terminal", shortcut: "", action: () => addToast("Not yet implemented", "This action is coming soon.", "info") },
     ],
   };
 
@@ -1951,14 +1964,16 @@ function IDEPage({ user }) {
               ))}
             </div>
             {/* Breadcrumb */}
-            <div style={{ height: 22, padding: "0 14px", display: "flex", alignItems: "center", gap: 4, borderTop: `1px solid ${C.border}`, background: "rgba(0,0,0,.2)" }}>
-              <span style={{ fontSize: 10, color: C.muted, fontFamily: "JetBrains Mono" }}>veda-learn</span>
-              <span style={{ fontSize: 10, color: C.muted }}>›</span>
-              <span style={{ fontSize: 10, color: C.muted, fontFamily: "JetBrains Mono" }}>{activeFile.includes("analyze") || activeFile.includes("lesson") ? "handlers" : activeFile === "package.json" ? "." : "src"}</span>
-              <span style={{ fontSize: 10, color: C.muted }}>›</span>
-              <span style={{ fontSize: 10, color: C.sub, fontFamily: "JetBrains Mono", fontWeight: 500 }}>{activeFile}</span>
-              {showLesson && activeFile === "cart.py" && <span style={{ marginLeft: "auto", fontSize: 10, color: C.amber, fontFamily: "JetBrains Mono", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: C.amber }} />Line {lesson?.lineNumber}: {lesson?.conceptId}</span>}
-            </div>
+            {activeFile && (
+              <div style={{ height: 22, padding: "0 14px", display: "flex", alignItems: "center", gap: 4, borderTop: `1px solid ${C.border}`, background: "rgba(0,0,0,.2)" }}>
+                <span style={{ fontSize: 10, color: C.muted, fontFamily: "JetBrains Mono" }}>veda-learn</span>
+                <span style={{ fontSize: 10, color: C.muted }}>›</span>
+                <span style={{ fontSize: 10, color: C.muted, fontFamily: "JetBrains Mono" }}>{activeFile.includes("analyze") || activeFile.includes("lesson") ? "handlers" : activeFile === "package.json" ? "." : "src"}</span>
+                <span style={{ fontSize: 10, color: C.muted }}>›</span>
+                <span style={{ fontSize: 10, color: C.sub, fontFamily: "JetBrains Mono", fontWeight: 500 }}>{activeFile}</span>
+                {showLesson && activeFile === "cart.py" && <span style={{ marginLeft: "auto", fontSize: 10, color: C.amber, fontFamily: "JetBrains Mono", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 4, height: 4, borderRadius: "50%", background: C.amber }} />Line {lesson?.lineNumber}: {lesson?.conceptId}</span>}
+              </div>
+            )}
           </div>
 
           {/* CODE + MINIMAP */}
@@ -1995,18 +2010,18 @@ function IDEPage({ user }) {
                 <span onClick={() => setBottomVis(false)} style={{ fontSize: 14, color: C.muted, cursor: "pointer", padding: "2px 6px", lineHeight: 1, borderRadius: 4 }} onMouseEnter={e => e.target.style.color = C.dim} onMouseLeave={e => e.target.style.color = C.muted}>×</span>
               </div>
               <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                {bottomPanel === "terminal" && <Terminal />}
+                {bottomPanel === "terminal" && <TerminalPanel />}
                 {bottomPanel === "output" && (
                   <div style={{ padding: "8px 14px", fontFamily: "JetBrains Mono", fontSize: 11.5, overflowY: "auto", flex: 1 }}>
-                    {analyzing && <div style={{ color: C.indigo, animation: "pulse 1s infinite" }}>⟳  Veda · Claude Haiku scanning {activeFile}...</div>}
-                    {showLesson && !analyzing && <><div style={{ color: C.green }}>✓  Analysis complete</div><div style={{ color: C.amber, marginTop: 3 }}>⚠  {activeFile}:{lesson?.lineNumber}  {lesson?.conceptId}  [confidence: 0.93]</div><div style={{ color: C.dim, marginTop: 3 }}>→  Lesson delivered via WebSocket · Polly audio generated</div></>}
+                    {analyzing && <div style={{ color: C.indigo, animation: "pulse 1s infinite" }}>⟳  Veda · Claude Haiku scanning {activeFile || "workspace"}...</div>}
+                    {showLesson && !analyzing && <><div style={{ color: C.green }}>✓  Analysis complete</div><div style={{ color: C.amber, marginTop: 3 }}>⚠  {activeFile || "file"}:{lesson?.lineNumber}  {lesson?.conceptId}  [confidence: 0.93]</div><div style={{ color: C.dim, marginTop: 3 }}>→  Lesson delivered via WebSocket · Polly audio generated</div></>}
                     {!analyzing && !showLesson && <div style={{ color: C.dim }}>Waiting for code changes... (30s debounce · F5 to force)</div>}
                   </div>
                 )}
                 {bottomPanel === "problems" && (
                   <div style={{ padding: "8px 14px", fontFamily: "JetBrains Mono", fontSize: 11.5, overflowY: "auto", flex: 1 }}>
                     {showLesson
-                      ? <div style={{ display: "flex", gap: 10, alignItems: "flex-start", color: C.amber }}><span style={{ marginTop: 1 }}>⚠</span><div><div>{activeFile}({lesson?.lineNumber},{1}): {lesson?.conceptId?.replace(/-/g, " ")} <span style={{ color: C.dim }}>veda({lesson?.conceptId})</span></div><div style={{ fontSize: 10, color: C.dim, marginTop: 2 }}>Mutable default argument — shared state across calls</div></div></div>
+                      ? <div style={{ display: "flex", gap: 10, alignItems: "flex-start", color: C.amber }}><span style={{ marginTop: 1 }}>⚠</span><div><div>{activeFile || "file"}({lesson?.lineNumber},{1}): {lesson?.conceptId?.replace(/-/g, " ")} <span style={{ color: C.dim }}>veda({lesson?.conceptId})</span></div><div style={{ fontSize: 10, color: C.dim, marginTop: 2 }}>Mutable default argument — shared state across calls</div></div></div>
                       : <div style={{ color: C.dim }}>No problems detected.</div>
                     }
                   </div>
@@ -2017,28 +2032,31 @@ function IDEPage({ user }) {
         </div>
 
         {/* RIGHT PANEL */}
-        <div style={{ width: 330, background: C.surface, borderLeft: `1px solid ${C.border}`, display: "flex", flexDirection: "column", flexShrink: 0, animation: "slideRight .25s ease both", zIndex: 8 }}>
-          <div style={{ height: 40, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "stretch", flexShrink: 0 }}>
-            {PANEL_TABS.map(pt => (
-              <button key={pt.id} className="panel-tab" onClick={() => { setRightPanel(pt.id); setDeepDive(false); }}
-                style={{ flex: 1, background: "transparent", border: "none", borderBottom: `2px solid ${rightPanel === pt.id ? C.indigo : "transparent"}`, color: rightPanel === pt.id ? C.text : C.dim, fontFamily: "Syne", fontSize: 10, fontWeight: 500, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, position: "relative", transition: "color .2s", padding: "4px 0" }}>
-                <span style={{ fontSize: 14, position: "relative" }}>
-                  {pt.icon}
-                  {pt.dot && <span style={{ position: "absolute", top: -2, right: -3, width: 6, height: 6, borderRadius: "50%", background: C.amber, boxShadow: `0 0 6px ${C.amber}`, animation: "pulse 2s infinite" }} />}
-                </span>
-                <span style={{ fontSize: 9, letterSpacing: ".04em" }}>{pt.label}</span>
-              </button>
-            ))}
-          </div>
+        {rightVis && (
+          <div style={{ width: 330, background: C.surface, borderLeft: `1px solid ${C.border}`, display: "flex", flexDirection: "column", flexShrink: 0, animation: "slideRight .25s ease both", zIndex: 8 }}>
+            <div style={{ height: 40, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "stretch", flexShrink: 0 }}>
+              {PANEL_TABS.map(pt => (
+                <button key={pt.id} className="panel-tab" onClick={() => { setRightPanel(pt.id); setDeepDive(false); }}
+                  style={{ flex: 1, background: "transparent", border: "none", borderBottom: `2px solid ${rightPanel === pt.id ? C.indigo : "transparent"}`, color: rightPanel === pt.id ? C.text : C.dim, fontFamily: "Syne", fontSize: 10, fontWeight: 500, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, position: "relative", transition: "color .2s", padding: "4px 0" }}>
+                  <span style={{ fontSize: 14, position: "relative" }}>
+                    {pt.icon}
+                    {pt.dot && <span style={{ position: "absolute", top: -2, right: -3, width: 6, height: 6, borderRadius: "50%", background: C.amber, boxShadow: `0 0 6px ${C.amber}`, animation: "pulse 2s infinite" }} />}
+                  </span>
+                  <span style={{ fontSize: 9, letterSpacing: ".04em" }}>{pt.label}</span>
+                </button>
+              ))}
+              <div onClick={() => setRightVis(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, cursor: "pointer", color: C.muted, fontSize: 18 }} onMouseEnter={e => e.target.style.color = C.dim} onMouseLeave={e => e.target.style.color = C.muted}>×</div>
+            </div>
 
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            {rightPanel === "lesson" && !deepDive && <LessonPanel lesson={showLesson ? lesson : null} onGotIt={handleGotIt} onDeepDive={handleDeepDive} />}
-            {rightPanel === "lesson" && deepDive && <DeepDivePanel lesson={lesson} onBack={() => setDeepDive(false)} />}
-            {rightPanel === "quiz" && <QuizPanel questions={quizActive ? QUIZ_QUESTIONS : []} onDone={() => setRightPanel("progress")} onConfetti={() => { setConfetti(true); setXp(x => x + 15); setTimeout(() => setConfetti(false), 3000); addToast("🏆 +15 XP", "Concept mastered!", "success"); }} />}
-            {rightPanel === "doubt" && <DoubtPanel activeFile={activeFile} />}
-            {rightPanel === "progress" && <ProgressPanel xp={xp} streak={streak} />}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              {rightPanel === "lesson" && !deepDive && <LessonPanel lesson={showLesson ? lesson : null} onGotIt={handleGotIt} onDeepDive={handleDeepDive} />}
+              {rightPanel === "lesson" && deepDive && <DeepDivePanel lesson={lesson} onBack={() => setDeepDive(false)} />}
+              {rightPanel === "quiz" && <QuizPanel questions={quizActive ? QUIZ_QUESTIONS : []} onDone={() => setRightPanel("progress")} onConfetti={() => { setConfetti(true); setXp(x => x + 15); setTimeout(() => setConfetti(false), 3000); addToast("🏆 +15 XP", "Concept mastered!", "success"); }} />}
+              {rightPanel === "doubt" && <DoubtPanel activeFile={activeFile} />}
+              {rightPanel === "progress" && <ProgressPanel xp={xp} streak={streak} />}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* STATUS BAR */}
@@ -2047,9 +2065,9 @@ function IDEPage({ user }) {
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "white", opacity: .9 }} />⑂ main
         </span>
         <span style={{ width: 1, height: 14, background: "rgba(255,255,255,.2)" }} />
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,.85)", fontFamily: "JetBrains Mono", cursor: "pointer" }}>{LANG_MAP[activeFile] || "plaintext"}</span>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,.85)", fontFamily: "JetBrains Mono", cursor: "pointer" }}>{activeFile ? (LANG_MAP[activeFile] || "plaintext") : "No file selected"}</span>
         <span style={{ width: 1, height: 14, background: "rgba(255,255,255,.2)" }} />
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,.85)", fontFamily: "JetBrains Mono" }}>{activeFile}</span>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,.85)", fontFamily: "JetBrains Mono" }}>{activeFile || "—"}</span>
         <div style={{ flex: 1 }} />
         {analyzing && <span style={{ fontSize: 11, color: "rgba(255,255,255,.95)", fontFamily: "JetBrains Mono", display: "flex", alignItems: "center", gap: 5, animation: "pulse .8s infinite" }}><span style={{ width: 8, height: 8, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,.5)", borderTopColor: "white", animation: "spin .7s linear infinite" }} />Analyzing...</span>}
         {showLesson && !analyzing && <span style={{ fontSize: 11, color: "rgba(255,255,255,.95)", fontFamily: "JetBrains Mono", cursor: "pointer" }} onClick={() => setRightPanel("lesson")}>⚠ 1 issue · {activeFile}</span>}
@@ -2082,8 +2100,10 @@ export default function App() {
     if (jwt && storedUser) {
       try {
         const userData = JSON.parse(storedUser);
-        setUser(userData);
-        setScreen("ide");
+        setTimeout(() => {
+          setUser(userData);
+          setScreen("ide");
+        }, 0);
       } catch (err) {
         console.error('Error parsing stored user:', err);
         // Clear invalid data
