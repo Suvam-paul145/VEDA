@@ -12,10 +12,12 @@ const dynamo = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1
  */
 async function checkRateLimit(userId) {
   const lockKey = `analyze:${userId}`;
-  const ttl = Math.floor(Date.now() / 1000) + 30; // 30 second TTL
+  const now = Math.floor(Date.now() / 1000);
+  const ttl = now + 30; // 30 second TTL
 
   try {
-    // Try to create a lock entry
+    // Try to create a lock entry — also allow overwriting if existing lock has expired.
+    // DynamoDB TTL deletion is lazy (can take hours), so we check expiry in-code.
     await dynamo.send(new PutItemCommand({
       TableName: 'veda-rate-limits',
       Item: {
@@ -24,14 +26,16 @@ async function checkRateLimit(userId) {
         createdAt: { S: new Date().toISOString() },
         ttl: { N: ttl.toString() },
       },
-      ConditionExpression: 'attribute_not_exists(lockKey)', // Only create if doesn't exist
+      ConditionExpression: 'attribute_not_exists(lockKey) OR #t < :now',
+      ExpressionAttributeNames: { '#t': 'ttl' },
+      ExpressionAttributeValues: { ':now': { N: now.toString() } },
     }));
 
     // Lock created successfully - not rate limited
     return false;
   } catch (err) {
     if (err.name === 'ConditionalCheckFailedException') {
-      // Lock already exists - rate limited
+      // Lock already exists AND has not expired - rate limited
       console.log(`[RateLimit] User ${userId} is rate limited`);
       return true;
     }

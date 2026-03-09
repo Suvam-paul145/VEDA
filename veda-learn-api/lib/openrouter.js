@@ -75,15 +75,43 @@ async function chatCompletion({ model, messages, maxTokens = 1500, temperature =
  * explanation + code-fix + concept-diagram in one go.
  */
 async function parallelCompletion(requests) {
-  return Promise.all(requests.map(chatCompletion));
+  return Promise.all(requests.map(chatCompletionWithFallback));
 }
 
 // Model aliases for convenience
 const MODELS = {
-  HAIKU:  'anthropic/claude-3-haiku-20240307',
-  SONNET: 'anthropic/claude-3-5-sonnet-20241022',
+  HAIKU:  'anthropic/claude-3-haiku',
+  SONNET: 'anthropic/claude-3-5-sonnet',
   FLASH:  'google/gemini-flash-1.5',     // Cheap fallback
   GPT4O_MINI: 'openai/gpt-4o-mini',     // Fallback option
 };
 
-module.exports = { chatCompletion, parallelCompletion, MODELS };
+// Fallback chain: if the primary model fails, try the next one
+const FALLBACK_CHAIN = {
+  [MODELS.HAIKU]:    [MODELS.GPT4O_MINI, MODELS.FLASH],
+  [MODELS.SONNET]:   [MODELS.HAIKU, MODELS.GPT4O_MINI],
+  [MODELS.FLASH]:    [MODELS.GPT4O_MINI, MODELS.HAIKU],
+  [MODELS.GPT4O_MINI]: [MODELS.FLASH, MODELS.HAIKU],
+};
+
+/**
+ * Chat completion with automatic model fallback.
+ * Tries the requested model first, then falls back through the chain.
+ */
+async function chatCompletionWithFallback(opts) {
+  const { model, ...rest } = opts;
+  const models = [model, ...(FALLBACK_CHAIN[model] || [MODELS.GPT4O_MINI, MODELS.FLASH])];
+
+  let lastError;
+  for (const m of models) {
+    try {
+      return await chatCompletion({ model: m, ...rest });
+    } catch (err) {
+      console.warn(`[openrouter] Model ${m} failed: ${err.message}, trying next…`);
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
+module.exports = { chatCompletion, chatCompletionWithFallback, parallelCompletion, MODELS };
