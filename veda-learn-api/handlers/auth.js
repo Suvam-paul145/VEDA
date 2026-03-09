@@ -76,7 +76,8 @@ module.exports.callback = async (event) => {
         }
 
         // Default: redirect (for VS Code extension or other clients)
-        const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:5173';
+        // Support both local and production URLs
+        const webAppUrl = process.env.WEB_APP_URL_PRODUCTION || process.env.WEB_APP_URL || 'http://localhost:5173';
         return {
             statusCode: 302,
             headers: { Location: `${webAppUrl}/auth/callback?token=${token}` }
