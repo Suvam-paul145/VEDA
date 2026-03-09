@@ -61,8 +61,9 @@ export const api = {
           fileContent, language, fileName, cursorLine, diagnostics
         })
         
-        // Update rate limiting state on successful request
-        lastAnalysisTime = now;
+        // Update rate limiting state AFTER the response using current time
+        const completedAt = Date.now();
+        lastAnalysisTime = completedAt;
         isInCooldown = true;
         setTimeout(() => { isInCooldown = false; }, 30000);
         
@@ -80,7 +81,7 @@ export const api = {
         if (err.response?.status === 429) {
           const cooldown = err.response.data?.cooldown || 30;
           isInCooldown = true;
-          lastAnalysisTime = now; // Set last analysis time even on error
+          lastAnalysisTime = Date.now();
           setTimeout(() => { isInCooldown = false; }, cooldown * 1000);
           throw new Error(`Rate limited by server. Please wait ${cooldown} seconds.`);
         }

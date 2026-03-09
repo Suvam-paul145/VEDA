@@ -1,7 +1,7 @@
 // handlers/doubt.js — AI Doubt/Chat handler using OpenRouter
 
 const jwt = require('jsonwebtoken');
-const { callOpenRouter } = require('../lib/openrouter');
+const { chatCompletion, MODELS } = require('../lib/openrouter');
 
 /**
  * POST /api/doubt
@@ -91,10 +91,12 @@ Question: ${question}`
 
   // 4. Call OpenRouter with Claude Haiku for fast responses
   try {
-    const answer = await callOpenRouter({
-      model: 'anthropic/claude-haiku-4',
-      systemPrompt,
-      userPrompt,
+    const answer = await chatCompletion({
+      model: MODELS.HAIKU,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
       maxTokens: 300,
     });
 

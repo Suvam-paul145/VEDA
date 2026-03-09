@@ -34,7 +34,19 @@ export function useWebSocket() {
 
     // Handle empty or invalid messages
     if (!msg || !msg.type) {
-      console.warn('[WS] Message missing type field:', msg);
+      // Handle server error messages that come without a type field
+      if (msg?.message && typeof msg.message === 'string') {
+        console.warn('[WS] Server error (no type field):', msg.message);
+        if (addNotification) {
+          addNotification({
+            type: 'error',
+            title: 'Connection issue',
+            body: 'Server encountered an error. Retrying automatically.',
+          });
+        }
+      } else {
+        console.warn('[WS] Message missing type field:', msg);
+      }
       return;
     }
 

@@ -1471,8 +1471,15 @@ function DoubtPanel({ activeFile }) {
       setMsgs(m => [...m, { role: "assistant", content: response.answer }]);
     } catch (error) {
       console.error('[DoubtPanel] API error:', error);
-      // Fallback to a generic response if API fails
-      const fallbackAnswer = `I'd be happy to help with "${t}". In the context of ${activeFile}, this relates to best practices in ${language}. For more detailed assistance, please ensure your code is saved and try again.`;
+      // Show a clear error message so the user knows the request failed
+      let fallbackAnswer;
+      if (error.response?.status === 429) {
+        fallbackAnswer = '⚠️ Rate limited — please wait a moment before asking again.';
+      } else if (error.response?.status === 401) {
+        fallbackAnswer = '⚠️ Authentication error. Please try logging in again.';
+      } else {
+        fallbackAnswer = '⚠️ Sorry, I couldn\'t process your question right now. Please try again in a moment.';
+      }
       setMsgs(m => [...m, { role: "assistant", content: fallbackAnswer }]);
     } finally {
       setLoading(false);
