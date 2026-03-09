@@ -1,7 +1,7 @@
 // handlers/doubt.js — AI Doubt/Chat handler using OpenRouter
 
 const jwt = require('jsonwebtoken');
-const { chatCompletion, MODELS } = require('../lib/openrouter');
+const { chatCompletionWithFallback, MODELS } = require('../lib/openrouter');
 
 /**
  * POST /api/doubt
@@ -91,7 +91,7 @@ Question: ${question}`
 
   // 4. Call OpenRouter with Claude Haiku for fast responses
   try {
-    const answer = await chatCompletion({
+    const answer = await chatCompletionWithFallback({
       model: MODELS.HAIKU,
       messages: [
         { role: 'system', content: systemPrompt },

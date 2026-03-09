@@ -112,6 +112,12 @@ functions:
       - websocket:
           route: $disconnect
 
+  wsDefault:
+    handler: handlers/wsDefault.handler
+    events:
+      - websocket:
+          route: $default
+
 plugins:
   - serverless-dotenv-plugin
   - serverless-offline
