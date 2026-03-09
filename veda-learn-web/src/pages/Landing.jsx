@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
 
 /* ─── Fonts injected via style tag ────────────────────────────────── */
@@ -440,6 +441,7 @@ const STATS = [
    MAIN APP
    ════════════════════════════════════════════════════════════════════ */
 export default function VedaLanding() {
+  const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
@@ -604,14 +606,14 @@ export default function VedaLanding() {
                 <a href="/login" className="cta-btn" style={{ textDecoration: "none" }}>
                   Start for Free →
                 </a>
-                <a href="/ide" className="ghost-btn" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+                <button className="ghost-btn" style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer" }} onClick={() => navigate("/login")}>
                   <span style={{
                     width: 28, height: 28, borderRadius: "50%",
                     background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)",
                     display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11,
                   }}>▶</span>
                   Try Demo
-                </a>
+                </button>
               </div>
 
               {/* Social proof */}
@@ -857,7 +859,7 @@ export default function VedaLanding() {
           </p>
 
           <div style={{ display: "flex", gap: 14, justifyContent: "center", alignItems: "center" }}>
-            <button className="cta-btn" style={{ fontSize: 16, padding: "16px 40px" }}>
+            <button className="cta-btn" style={{ fontSize: 16, padding: "16px 40px" }} onClick={() => navigate("/login")}>
               Open the IDE →
             </button>
             <a href="https://github.com" target="_blank" className="ghost-btn" style={{ display: "flex", alignItems: "center", gap: 8 }}>

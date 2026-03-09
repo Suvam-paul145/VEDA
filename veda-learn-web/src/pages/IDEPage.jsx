@@ -953,7 +953,7 @@ function LandingPage({ onGetStarted }) {
 
             <div style={{ display: "flex", gap: 14, justifyContent: "center", animation: "fadeUp .6s ease 240ms both" }}>
               <button className="veda-btn" style={{ fontSize: 16, padding: "15px 44px" }} onClick={onGetStarted}>Open the IDE →</button>
-              <button className="ghost-btn" style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <button className="ghost-btn" style={{ display: "flex", alignItems: "center", gap: 9 }} onClick={onGetStarted}>
                 <span style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(99,102,241,.2)", border: "1px solid rgba(99,102,241,.35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>▶</span>
                 Watch Demo
               </button>
@@ -1843,19 +1843,50 @@ function IDEPage({ user }) {
     ],
   };
 
-  const ACT = [
-    { id: "explorer", icon: "⊞", tip: "Explorer" },
-    { id: "search", icon: "⌕", tip: "Search" },
-    { id: "git", icon: "⑂", tip: "Source Control" },
-    { id: "github", icon: "🐙", tip: "GitHub Repos" },
-    { id: "veda", icon: "👁", tip: "Veda Insights" },
+const ACT = [
+    {
+      id: "explorer", tip: "Explorer",
+      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18" /><rect x="2" y="3" width="6" height="6" rx="1" fill="currentColor" fillOpacity=".15" stroke="none" /><rect x="2" y="9" width="6" height="6" rx="1" fill="currentColor" fillOpacity=".15" stroke="none" /></svg>
+    },
+    {
+      id: "search", tip: "Search",
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></svg>
+    },
+    {
+      id: "git", tip: "Source Control",
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="18" r="3" /><circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M6 9v6M15.5 7.5L9 15" /></svg>
+    },
+    {
+      id: "github", tip: "GitHub Repos",
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
+    },
+    {
+      id: "veda", tip: "Veda Insights",
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+    },
   ];
 
   const PANEL_TABS = [
-    { id: "lesson", icon: "📖", label: "Lesson", dot: showLesson && rightPanel !== "lesson" },
-    { id: "quiz", icon: "🎯", label: "Quiz", dot: quizActive && rightPanel !== "quiz" },
-    { id: "doubt", icon: "💬", label: "Ask" },
-    { id: "progress", icon: "📈", label: "Progress" },
+    {
+      id: "lesson",
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>,
+      label: "Lesson", dot: showLesson && rightPanel !== "lesson"
+    },
+    {
+      id: "quiz",
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,
+      label: "Quiz", dot: quizActive && rightPanel !== "quiz"
+    },
+    {
+      id: "doubt",
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
+      label: "Ask"
+    },
+    {
+      id: "progress",
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
+      label: "Progress"
+    },
   ];
 
   return (
@@ -1907,7 +1938,7 @@ function IDEPage({ user }) {
         <div style={{ position: "relative" }}>
           <button className="notif-bell" title="Notifications" onClick={e => { e.stopPropagation(); setNotifOpen(v => !v); }}
             style={{ width: 34, height: 34, borderRadius: 9, background: notifOpen ? "rgba(99,102,241,.15)" : "rgba(255,255,255,.04)", border: `1px solid ${notifOpen ? "rgba(99,102,241,.3)" : C.border}`, color: notifOpen ? C.indigo : C.dim, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginRight: 8, transition: "all .2s", position: "relative" }}>
-            🔔
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
             {unreadCount > 0 && <span style={{ position: "absolute", top: 4, right: 4, width: 8, height: 8, borderRadius: "50%", background: C.indigo, boxShadow: `0 0 6px ${C.indigo}`, animation: "pulse 2s infinite" }} />}
           </button>
           {notifOpen && (
@@ -1936,7 +1967,12 @@ function IDEPage({ user }) {
             </button>
           ))}
           <div style={{ flex: 1 }} />
-          <button title="Settings" onClick={() => setSettings(true)} style={{ width: 36, height: 36, borderRadius: 10, background: "transparent", border: "none", color: C.dim, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "color .2s" }} onMouseEnter={e => e.target.style.color = C.text} onMouseLeave={e => e.target.style.color = C.dim}>⚙</button>
+          <button title="Settings" onClick={() => setSettings(true)} style={{ width: 36, height: 36, borderRadius: 10, background: "transparent", border: "none", color: C.dim, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "color .2s" }} onMouseEnter={e => e.currentTarget.style.color = C.text} onMouseLeave={e => e.currentTarget.style.color = C.dim}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
         </div>
 
         {/* SIDEBAR */}
@@ -1944,7 +1980,7 @@ function IDEPage({ user }) {
           <div style={{ width: 218, background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", flexShrink: 0, animation: "slideIn .18s ease both", zIndex: 9, overflow: "hidden" }}>
             <div style={{ height: 34, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", borderBottom: `1px solid ${C.border}` }}>
               <span style={{ fontSize: 9, fontWeight: 700, color: C.dim, fontFamily: "JetBrains Mono", letterSpacing: ".1em", textTransform: "uppercase" }}>
-                {sidebarTab === "explorer" ? "Explorer" : sidebarTab === "search" ? "Search" : sidebarTab === "git" ? "Source Control" : "Veda Insights"}
+                {sidebarTab === "explorer" ? "Explorer" : sidebarTab === "search" ? "Search" : sidebarTab === "git" ? "Source Control" : sidebarTab === "github" ? "GitHub Repos" : "Veda Insights"}
               </span>
               <span onClick={() => setSidebarTab(null)} style={{ color: C.muted, cursor: "pointer", fontSize: 14, lineHeight: 1 }} onMouseEnter={e => e.target.style.color = C.dim} onMouseLeave={e => e.target.style.color = C.muted}>×</span>
             </div>
@@ -2085,7 +2121,7 @@ function IDEPage({ user }) {
       {/* STATUS BAR */}
       <div style={{ height: 24, background: `linear-gradient(90deg,${C.indigo},${C.violet})`, display: "flex", alignItems: "center", padding: "0 12px", gap: 14, flexShrink: 0, position: "relative", zIndex: 20 }}>
         <span style={{ fontSize: 11, color: "rgba(255,255,255,.9)", fontFamily: "JetBrains Mono", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "white", opacity: .9 }} />⑂ main
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="18" r="3" /><circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M6 9v6M15.5 7.5L9 15" /></svg> main
         </span>
         <span style={{ width: 1, height: 14, background: "rgba(255,255,255,.2)" }} />
         <span style={{ fontSize: 11, color: "rgba(255,255,255,.85)", fontFamily: "JetBrains Mono", cursor: "pointer" }}>{activeFile ? (LANG_MAP[activeFile] || "plaintext") : "No file selected"}</span>
