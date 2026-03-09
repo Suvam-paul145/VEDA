@@ -9,7 +9,8 @@ module.exports.handler = async (event) => {
     let body;
     try {
         body = JSON.parse(event.body || '{}');
-    } catch {
+    } catch (e) {
+        console.warn('[wsDefault] Unparseable message body:', event.body);
         return { statusCode: 200, body: 'ok' };
     }
 
