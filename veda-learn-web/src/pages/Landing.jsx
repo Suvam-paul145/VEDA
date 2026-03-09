@@ -163,10 +163,10 @@ function ThreeCanvas() {
 
     /* ── ANIMATE ───────────────────────────────────────── */
     let frame;
-    const clock = new THREE.Clock();
+    let startTime = performance.now() * 0.001;
     const animate = () => {
       frame = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+      const t = (performance.now() * 0.001) - startTime;
 
       particles.rotation.y = t * 0.018;
       particles.rotation.x = t * 0.006;

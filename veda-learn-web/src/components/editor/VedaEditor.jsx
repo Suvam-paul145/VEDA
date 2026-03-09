@@ -3,6 +3,7 @@ import MonacoEditor from '@monaco-editor/react';
 import useVedaStore from '../../store/useVedaStore';
 import { useDebounce } from '../../hooks/useDebounce';
 import api from '../../lib/api';
+import RateLimitIndicator from '../ui/RateLimitIndicator';
 
 // ─── Language detection by filename ──────────────────────────
 const detectLanguage = (fileName) => {
@@ -155,7 +156,7 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
         }
     }, [activeFile, language, setAnalyzing, setLastAnalysis, addNotification]);
 
-    useDebounce(runAnalysis, localCode, 30_000);
+    useDebounce(runAnalysis, localCode, 45_000); // Increased from 30s to 45s to reduce rate limiting
 
     // ── Error marker decoration ───────────────────────────────
     const addErrorMarker = useCallback((lineNumber) => {
@@ -233,6 +234,20 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
 
     return (
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative', ...style }}>
+            {/* Rate limit indicator */}
+            <div style={{ 
+                position: 'absolute', 
+                top: 8, 
+                right: 12, 
+                zIndex: 10,
+                background: 'rgba(7, 9, 15, 0.8)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                border: '1px solid rgba(99, 102, 241, 0.2)'
+            }}>
+                <RateLimitIndicator />
+            </div>
+            
             <MonacoEditor
                 height="100%"
                 language={detectLanguage(activeFile)}

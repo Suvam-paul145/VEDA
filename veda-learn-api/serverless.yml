@@ -91,6 +91,15 @@ functions:
           method: post
           cors: true
 
+  doubt:
+    handler: handlers/doubt.handler
+    timeout: 15
+    events:
+      - http:
+          path: api/doubt
+          method: post
+          cors: true
+
   wsConnect:
     handler: handlers/wsConnect.handler
     events:

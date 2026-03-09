@@ -7,6 +7,7 @@ import FileTree from "../components/ide/FileTree";
 import GitHubPanel from "../components/ide/GitHubPanel";
 import SourceControl from "../components/ide/SourceControl";
 import TerminalPanel from "../components/ide/TerminalPanel";
+import api from "../lib/api";
 
 /* ═══════════════════════════════════════════════════════════════
    GLOBAL STYLES
@@ -571,9 +572,9 @@ function LandingCanvas() {
     const onM = e => { mx = (e.clientX / innerWidth - .5) * 2; my = -(e.clientY / innerHeight - .5) * 2; };
     const onR = () => { cam.aspect = el.clientWidth / el.clientHeight; cam.updateProjectionMatrix(); renderer.setSize(el.clientWidth, el.clientHeight); };
     window.addEventListener("mousemove", onM); window.addEventListener("resize", onR);
-    let raf; const clk = new THREE.Clock();
+    let raf; let startTime = performance.now() * 0.001;
     const anim = () => {
-      raf = requestAnimationFrame(anim); const t = clk.getElapsedTime();
+      raf = requestAnimationFrame(anim); const t = (performance.now() * 0.001) - startTime;
       pts.rotation.y = t * .018; pts.rotation.x = t * .006;
       orbs.forEach(o => { o.mesh.position.y = o.oy + Math.sin(t * o.sp + o.ph) * 1.4; o.mesh.position.x = o.ox + Math.cos(t * o.sp * .6 + o.ph) * .8; });
       cam.position.x += (mx * 2.8 - cam.position.x) * .04; cam.position.y += (my * 1.6 - cam.position.y) * .04; cam.lookAt(0, 0, 0);
@@ -614,9 +615,9 @@ function LoginCanvas() {
 
     const onR = () => { cam.aspect = el.clientWidth / el.clientHeight; cam.updateProjectionMatrix(); renderer.setSize(el.clientWidth, el.clientHeight); };
     window.addEventListener("resize", onR);
-    let raf; const clk = new THREE.Clock();
+    let raf; let startTime = performance.now() * 0.001;
     const anim = () => {
-      raf = requestAnimationFrame(anim); const t = clk.getElapsedTime();
+      raf = requestAnimationFrame(anim); const t = (performance.now() * 0.001) - startTime;
       rings[0].rotation.z += .006; rings[0].rotation.x += .003;
       rings[1].rotation.z -= .004; rings[1].rotation.y += .005;
       rings[2].rotation.x += .007; rings[2].rotation.z -= .003;
@@ -645,9 +646,9 @@ function IDEAmbient() {
     });
     const onR = () => { cam.aspect = el.clientWidth / el.clientHeight; cam.updateProjectionMatrix(); renderer.setSize(el.clientWidth, el.clientHeight); };
     window.addEventListener("resize", onR);
-    let raf; const clk = new THREE.Clock();
+    let raf; let startTime = performance.now() * 0.001;
     const anim = () => {
-      raf = requestAnimationFrame(anim); const t = clk.getElapsedTime();
+      raf = requestAnimationFrame(anim); const t = (performance.now() * 0.001) - startTime;
       orbs.forEach(o => { o.mesh.position.y = o.oy + Math.sin(t * .25 + o.ph) * 1.8; o.mesh.position.x = o.ox + Math.cos(t * .18 + o.ph) * .9; });
       renderer.render(scene, cam);
     };
@@ -1443,21 +1444,39 @@ function DoubtPanel({ activeFile }) {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
   const STARTERS = ["Why is mutable default bad?", "Explain async/await", "How to fix callback hell?", "What is type safety in TS?"];
-  const ANSWERS = {
-    "Why is mutable default bad?": "Python evaluates default arguments once at function definition time — not per call. A mutable list `[]` as a default is shared across all invocations. The fix is `cart=None` with `if cart is None: cart = []` inside the body, creating a fresh list per call.",
-    "Explain async/await": "async/await is syntactic sugar over Promises. An `async` function always returns a Promise. `await` pauses execution inside that async context until the Promise resolves — keeping the JS event loop free. It flattens nested callbacks into readable, sequential-looking code.",
-    "How to fix callback hell?": "Refactor to async/await:\n\n// Instead of nested callbacks:\ngetUser(id, (err, user) => {\n  getOrders(user.id, (err, orders) => { ... })\n})\n\n// Use:\nconst user = await getUser(id);\nconst orders = await getOrders(user.id);",
-    "What is type safety in TS?": "TypeScript's type system catches shape mismatches at compile time. Using `any` bypasses this — you lose autocomplete, refactoring safety, and error detection. Instead use:\n• Specific interfaces: `interface User { id: string; name: string; }`\n• Generics: `axios.get<User>('/api/user')`\n• Union types: `string | number`",
-  };
+  
+  // Get current code context from store
+  const openFiles = useVedaStore(s => s.openFiles);
+  const currentCode = openFiles[activeFile]?.content || '';
+  const language = activeFile?.split('.').pop()?.toLowerCase() || 'javascript';
+  
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
-  const send = (text) => {
-    const t = text || input.trim(); if (!t || loading) return;
-    setInput(""); setMsgs(m => [...m, { role: "user", content: t }]); setLoading(true);
-    setTimeout(() => {
-      const ans = ANSWERS[t] || `Great question about "${t}". In the context of ${activeFile}, the key principle is defensive programming — always consider what happens when state leaks between calls or types don't match expectations. The pattern Veda detected is closely related to this broader concept of hidden shared state.`;
-      setMsgs(m => [...m, { role: "assistant", content: ans }]); setLoading(false);
-    }, 1300);
+  const send = async (text) => {
+    const t = text || input.trim(); 
+    if (!t || loading) return;
+    
+    setInput(""); 
+    setMsgs(m => [...m, { role: "user", content: t }]); 
+    setLoading(true);
+    
+    try {
+      // Use the actual API instead of hardcoded responses
+      const response = await api.askDoubt({
+        question: t,
+        codeContext: currentCode,
+        language: language
+      });
+      
+      setMsgs(m => [...m, { role: "assistant", content: response.answer }]);
+    } catch (error) {
+      console.error('[DoubtPanel] API error:', error);
+      // Fallback to a generic response if API fails
+      const fallbackAnswer = `I'd be happy to help with "${t}". In the context of ${activeFile}, this relates to best practices in ${language}. For more detailed assistance, please ensure your code is saved and try again.`;
+      setMsgs(m => [...m, { role: "assistant", content: fallbackAnswer }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

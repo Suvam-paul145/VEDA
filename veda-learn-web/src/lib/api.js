@@ -26,6 +26,7 @@ client.interceptors.response.use(
 // ─── Rate limiting state ──────────────────────────────────────────────────
 let lastAnalysisTime = 0;
 let isInCooldown = false;
+let pendingAnalysis = null; // Track pending analysis promise
 
 // ─── API METHODS ──────────────────────────────────────────────────────
 export const api = {
@@ -37,6 +38,12 @@ export const api = {
 
   // Core analyze with rate limiting
   async analyze({ fileContent, language, fileName, cursorLine, diagnostics = [] }) {
+    // If there's already a pending analysis, return that promise
+    if (pendingAnalysis) {
+      console.log('[API] Analysis already in progress, waiting...');
+      return pendingAnalysis;
+    }
+
     // Check client-side rate limiting (30 second cooldown)
     const now = Date.now();
     const timeSinceLastAnalysis = now - lastAnalysisTime;
@@ -47,35 +54,44 @@ export const api = {
       throw new Error(`Please wait ${remainingTime} seconds before analyzing again`);
     }
 
-    try {
-      const res = await client.post('/api/analyze', {
-        fileContent, language, fileName, cursorLine, diagnostics
-      })
-      
-      // Update rate limiting state on successful request
-      lastAnalysisTime = now;
-      isInCooldown = true;
-      setTimeout(() => { isInCooldown = false; }, 30000);
-      
-      if (res.data.teach && res.data.lineNumber) {
-        useVedaStore.getState().setErrorMarkers([{
-          lineNumber:  res.data.lineNumber,
-          conceptId:   res.data.conceptId,
-          confidence:  res.data.confidence || 0.9,
-        }])
-        useVedaStore.getState().setLastAnalysis(res.data)
-      }
-      return res.data
-    } catch (err) {
-      // Handle 429 rate limiting from server
-      if (err.response?.status === 429) {
-        const cooldown = err.response.data?.cooldown || 30;
+    // Create the analysis promise
+    pendingAnalysis = (async () => {
+      try {
+        const res = await client.post('/api/analyze', {
+          fileContent, language, fileName, cursorLine, diagnostics
+        })
+        
+        // Update rate limiting state on successful request
+        lastAnalysisTime = now;
         isInCooldown = true;
-        setTimeout(() => { isInCooldown = false; }, cooldown * 1000);
-        throw new Error(`Rate limited by server. Please wait ${cooldown} seconds.`);
+        setTimeout(() => { isInCooldown = false; }, 30000);
+        
+        if (res.data.teach && res.data.lineNumber) {
+          useVedaStore.getState().setErrorMarkers([{
+            lineNumber:  res.data.lineNumber,
+            conceptId:   res.data.conceptId,
+            confidence:  res.data.confidence || 0.9,
+          }])
+          useVedaStore.getState().setLastAnalysis(res.data)
+        }
+        return res.data
+      } catch (err) {
+        // Handle 429 rate limiting from server
+        if (err.response?.status === 429) {
+          const cooldown = err.response.data?.cooldown || 30;
+          isInCooldown = true;
+          lastAnalysisTime = now; // Set last analysis time even on error
+          setTimeout(() => { isInCooldown = false; }, cooldown * 1000);
+          throw new Error(`Rate limited by server. Please wait ${cooldown} seconds.`);
+        }
+        throw err;
+      } finally {
+        // Clear pending analysis after completion
+        pendingAnalysis = null;
       }
-      throw err;
-    }
+    })();
+
+    return pendingAnalysis;
   },
 
   // Check if analysis is available (not in cooldown)

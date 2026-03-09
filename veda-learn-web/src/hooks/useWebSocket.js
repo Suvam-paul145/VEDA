@@ -32,6 +32,12 @@ export function useWebSocket() {
       return; 
     }
 
+    // Handle empty or invalid messages
+    if (!msg || !msg.type) {
+      console.warn('[WS] Message missing type field:', msg);
+      return;
+    }
+
     console.log(`[WS] ← ${msg.type}`, msg.data);
 
     switch (msg.type) {
@@ -115,7 +121,7 @@ export function useWebSocket() {
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
 
-    const token = localStorage.getItem('veda_token');
+    const token = localStorage.getItem('veda_jwt'); // Fixed: use veda_jwt instead of veda_token
     if (!token) {
       console.warn('[WS] No JWT found — skipping connection');
       return;
