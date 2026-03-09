@@ -30,6 +30,10 @@ async function getConnectionIds(userId) {
  */
 async function pushToConnection(connectionId, payload) {
   const endpoint = process.env.WEBSOCKET_ENDPOINT; // e.g. https://imhoyvukwe.execute-api.us-east-1.amazonaws.com/dev
+  if (!endpoint) {
+    console.error('[WS] WEBSOCKET_ENDPOINT not configured — cannot push to connections');
+    return false;
+  }
   const client = new ApiGatewayManagementApiClient({ endpoint });
 
   try {
