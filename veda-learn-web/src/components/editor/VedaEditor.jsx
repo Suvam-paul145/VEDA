@@ -83,13 +83,14 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
         setLocalCode(code);
     }
 
-    // ── Debounced analysis trigger ────────────────────────────
-    const runAnalysis = useCallback(async (content) => {
+    // ── Analysis runner (used by debounce & manual triggers) ──
+    const runAnalysis = useCallback(async (content, { silent = false } = {}) => {
         // Check if we can analyze (not in cooldown)
         if (!api.canAnalyze()) {
             const cooldownTime = api.getCooldownTime();
             console.log(`[VedaEditor] Skipping analysis - ${cooldownTime}s cooldown remaining`);
-            if (addNotification) {
+            // Only show notification for manual triggers, not for auto-debounced ones
+            if (!silent && addNotification) {
                 addNotification({
                     type: 'info',
                     title: 'Analysis cooldown',
@@ -116,33 +117,31 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
                         body: `Found ${data.conceptId?.replace(/-/g, ' ')} at line ${data.lineNumber}`
                     });
                 }
-            } else {
-                if (addNotification) {
-                    addNotification({
-                        type: 'info',
-                        title: 'Analysis complete',
-                        body: 'No issues detected in your code'
-                    });
-                }
+            } else if (!silent && addNotification) {
+                addNotification({
+                    type: 'info',
+                    title: 'Analysis complete',
+                    body: 'No issues detected in your code'
+                });
             }
         } catch (err) {
             console.error('[VedaEditor] Analysis error:', err);
             
             // Handle rate limiting errors gracefully
             if (err.message.includes('wait') || err.message.includes('Rate limited')) {
-                if (addNotification) {
+                // Set rate limit timer for UI feedback
+                const cooldownTime = api.getCooldownTime();
+                if (cooldownTime > 0) {
+                    setRateLimitedUntil(Date.now() + (cooldownTime * 1000));
+                }
+                if (!silent && addNotification) {
                     addNotification({
                         type: 'warning',
                         title: 'Rate limited',
                         body: err.message
                     });
                 }
-                // Set rate limit timer for UI feedback
-                const cooldownTime = api.getCooldownTime();
-                if (cooldownTime > 0) {
-                    setRateLimitedUntil(Date.now() + (cooldownTime * 1000));
-                }
-            } else {
+            } else if (!silent) {
                 if (addNotification) {
                     addNotification({
                         type: 'error',
@@ -156,7 +155,13 @@ export default function VedaEditor({ style, activeFile, code, language, onCodeCh
         }
     }, [activeFile, language, setAnalyzing, setLastAnalysis, addNotification]);
 
-    useDebounce(runAnalysis, localCode, 45_000); // Increased from 30s to 45s to reduce rate limiting
+    // Auto-analysis: silent (no notification spam for cooldowns)
+    const silentRunAnalysis = useCallback(
+        (content) => runAnalysis(content, { silent: true }),
+        [runAnalysis]
+    );
+
+    useDebounce(silentRunAnalysis, localCode, 45_000);
 
     // ── Error marker decoration ───────────────────────────────
     const addErrorMarker = useCallback((lineNumber) => {
